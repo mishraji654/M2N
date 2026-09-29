@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "M2N Hotels",
+    "slug": "m2n-hotels-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1715"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B1715"
+      },
+      "package": "com.m2nhotels.mobile"
+    },
+    "ios": {
+      "bundleIdentifier": "com.m2nhotels.mobile"
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
+  }
+}
