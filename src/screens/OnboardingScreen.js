@@ -4,17 +4,17 @@ import {
   Text,
   StyleSheet,
   Image,
-  SafeAreaView,
+  ImageBackground,
   StatusBar,
   Platform
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SwipeButton from '../components/common/SwipeButton';
 
-const ONBOARDING_IMAGE_URI =
-  'https://images.unsplash.com/photo-1673388756897-28832439e9aa?fm=jpg&q=80&w=1600&auto=format&fit=crop';
-
 export default function OnboardingScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
+
   const handleSwipeComplete = () => {
     navigation.navigate('Login');
   };
@@ -24,52 +24,63 @@ export default function OnboardingScreen({ navigation }) {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* Full-bleed Luxury Night Hotel Background Image */}
-      <Image
-        source={{ uri: ONBOARDING_IMAGE_URI }}
-        defaultSource={require('../../assets/onboarding_hero.jpg')}
+      <ImageBackground
+        source={require('../../assets/onboarding_hero.jpg')}
         style={styles.backgroundImage}
         resizeMode="cover"
-      />
-
-      {/* Soft Transparent Scrim Gradient for Readability */}
-      <LinearGradient
-        colors={[
-          'rgba(0, 0, 0, 0.45)',
-          'transparent',
-          'rgba(0, 0, 0, 0.3)',
-          'rgba(0, 0, 0, 0.92)'
-        ]}
-        locations={[0, 0.22, 0.52, 1]}
-        style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}
-      />
-
-      {/* Top Header with M2N Logo */}
-      <SafeAreaView style={styles.topSafeArea}>
-        <Image
-          source={require('../../assets/m2n_logo2.png')}
-          style={styles.logo}
-          resizeMode="contain"
+      >
+        {/* Soft Transparent Scrim Gradient for Readability */}
+        <LinearGradient
+          colors={[
+            'rgba(0, 0, 0, 0.65)',
+            'rgba(0, 0, 0, 0.15)',
+            'rgba(0, 0, 0, 0.45)',
+            'rgba(0, 0, 0, 0.96)'
+          ]}
+          locations={[0, 0.25, 0.55, 1]}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
         />
-      </SafeAreaView>
 
-      {/* Bottom Content Area */}
-      <View style={styles.bottomContent}>
-        <Text style={styles.title}>
-          Discover Your Perfect{'\n'}Place Book Now.
-        </Text>
+        {/* Foreground Content Container with exact safe insets */}
+        <View
+          style={[
+            styles.content,
+            {
+              paddingTop: Math.max(insets.top, 24) + (Platform.OS === 'android' ? 14 : 8),
+              paddingBottom: Math.max(insets.bottom, 16) + (Platform.OS === 'android' ? 18 : 12)
+            }
+          ]}
+        >
+          {/* Top Header with M2N Logo */}
+          <View style={styles.topHeader}>
+            <Image
+              source={require('../../assets/m2n_logo2.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
 
-        <Text style={styles.subtitle}>
-          Discover your perfect place for any trip, from cosy stays to luxury escapes.
-        </Text>
+          {/* Bottom Content Area */}
+          <View style={styles.bottomContent}>
+            <Text style={styles.title}>
+              Discover Your Perfect{'\n'}Place, Book Now.
+            </Text>
 
-        {/* Interactive Swipe Button */}
-        <View style={styles.swipeContainer}>
-          <SwipeButton
-            title="Get Started"
-            onSwipeComplete={handleSwipeComplete}
-          />
+            <Text style={styles.subtitle}>
+              Discover your perfect place for any trip, from cosy stays to luxury escapes.
+            </Text>
+
+            {/* Interactive Swipe Button */}
+            <View style={styles.swipeContainer}>
+              <SwipeButton
+                title="Swipe to continue"
+                onSwipeComplete={handleSwipeComplete}
+              />
+            </View>
+          </View>
         </View>
-      </View>
+      </ImageBackground>
     </View>
   );
 }
@@ -78,61 +89,64 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
+    height: '100%',
     backgroundColor: '#000000',
-    justifyContent: 'space-between',
-    position: 'relative',
     ...Platform.select({
       web: {
+        height: '100vh',
         minHeight: '100vh',
         overflow: 'hidden'
       }
     })
   },
   backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     width: '100%',
     height: '100%'
   },
-  topSafeArea: {
-    paddingTop: Platform.OS === 'web' ? 44 : (Platform.OS === 'ios' ? 52 : (StatusBar.currentHeight || 24) + 12),
-    paddingHorizontal: 22,
-    alignItems: 'flex-start',
-    zIndex: 10
-  },
-  logo: {
-    width: 140,
-    height: 48
-  },
-  bottomContent: {
-    width: '100%',
-    paddingHorizontal: 22,
-    paddingBottom: Platform.OS === 'web' ? 36 : (Platform.OS === 'ios' ? 44 : 26),
-    zIndex: 10,
+  content: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
     ...Platform.select({
       web: {
         maxWidth: 480,
-        marginHorizontal: 'auto'
+        marginHorizontal: 'auto',
+        width: '100%'
       }
     })
+  },
+  topHeader: {
+    width: '100%',
+    alignItems: 'flex-start'
+  },
+  logo: {
+    width: 150,
+    height: 52
+  },
+  bottomContent: {
+    width: '100%'
   },
   title: {
     color: '#FFFFFF',
     fontSize: Platform.OS === 'web' ? 32 : 28,
-    fontWeight: '900',
-    lineHeight: Platform.OS === 'web' ? 38 : 34,
-    letterSpacing: -0.5,
+    fontWeight: '800',
+    lineHeight: Platform.OS === 'web' ? 38 : 35,
+    letterSpacing: -0.3,
     marginBottom: 8,
+    includeFontPadding: false,
     textShadowColor: 'rgba(0, 0, 0, 0.95)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8
   },
   subtitle: {
-    color: 'rgba(255, 255, 255, 0.92)',
-    fontSize: 14,
-    lineHeight: 20,
+    color: 'rgba(255, 255, 255, 0.90)',
+    fontSize: 14.5,
+    lineHeight: 21,
     fontWeight: '400',
     marginBottom: 20,
-    maxWidth: 320,
+    maxWidth: 340,
+    includeFontPadding: false,
     textShadowColor: 'rgba(0, 0, 0, 0.9)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6

@@ -7,9 +7,9 @@ import {
   Pressable,
   StyleSheet,
   StatusBar,
-  Dimensions,
-  SafeAreaView
+  Dimensions
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { hotels, rooms } from '../data/siteData';
@@ -48,7 +48,7 @@ export default function HotelDetailScreen({ route, navigation }) {
           />
 
           {/* Floating Top Header Buttons */}
-          <SafeAreaView style={styles.floatingHeader}>
+          <SafeAreaView style={styles.floatingHeader} edges={['top']}>
             <Pressable
               style={({ pressed }) => [styles.headerButton, pressed && { opacity: 0.8 }]}
               onPress={() => navigation.goBack()}

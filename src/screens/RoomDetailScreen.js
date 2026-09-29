@@ -6,9 +6,9 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  StatusBar,
-  SafeAreaView
+  StatusBar
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
 
@@ -29,7 +29,7 @@ export default function RoomDetailScreen({ route, navigation }) {
           <Image source={{ uri: room.image }} style={styles.hero} resizeMode="cover" />
 
           {/* Floating Back Button */}
-          <SafeAreaView style={styles.floatingHeader}>
+          <SafeAreaView style={styles.floatingHeader} edges={['top']}>
             <Pressable
               style={({ pressed }) => [styles.headerButton, pressed && { opacity: 0.8 }]}
               onPress={() => navigation.goBack()}

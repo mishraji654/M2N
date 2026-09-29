@@ -6,13 +6,13 @@ import {
   Pressable,
   Image,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   ImageBackground,
   Platform,
   Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
@@ -52,7 +52,7 @@ export default function LoginScreen({ navigation }) {
           style={StyleSheet.absoluteFill}
         />
 
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
           {/* Top Navigation Bar */}
           <View style={styles.topBar}>
             <Pressable
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 22,
-    paddingTop: Platform.OS === 'web' ? 36 : (Platform.OS === 'ios' ? 44 : 14),
+    paddingTop: Platform.OS === 'web' ? 24 : 10,
     paddingBottom: 6
   },
   backBtn: {

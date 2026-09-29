@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Pressable,
   Image,
@@ -13,6 +12,7 @@ import {
   Platform,
   TextInput
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { brand, diningVenues } from '../data/siteData';
 import { COLORS } from '../theme/colors';
@@ -67,7 +67,7 @@ export default function RestaurantScreen({ navigation }) {
   const calculatedTotal = (selectedVenue?.numericPrice || 4200) * guests;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Floating Animated Toast Banner */}
@@ -260,57 +260,7 @@ export default function RestaurantScreen({ navigation }) {
           </View>
         </View>
 
-        {/* =================================================================== */}
-        {/* 5. LUXURY OBSIDIAN FOOTER (Matching website screenshot 3)          */}
-        {/* =================================================================== */}
-        <View style={styles.footerContainer}>
-          <View style={styles.footerBrand}>
-            <View style={styles.footerLogoRow}>
-              <View style={styles.footerLogoBadge}>
-                <Ionicons name="sparkles" size={16} color="#EA580C" />
-              </View>
-              <Text style={styles.footerBrandName}>M2N HOTELS</Text>
-            </View>
-            <Text style={styles.footerTagline}>Stay Better, Grow Together</Text>
-          </View>
-
-          <View style={styles.footerColumns}>
-            <View style={styles.footerCol}>
-              <Text style={styles.footerColTitle}>OUR HOTELS</Text>
-              <Text style={styles.footerColItem}>Flagship Zaarang, Lucknow</Text>
-              <Text style={styles.footerColItem}>Heritage Palace, Jaipur</Text>
-              <Text style={styles.footerColItem}>Mountain Retreat, Shimla</Text>
-              <Text style={styles.footerColItem}>Royal Residency, Udaipur</Text>
-              <Text style={styles.footerColItem}>Coastal Haven, Goa</Text>
-            </View>
-
-            <View style={styles.footerCol}>
-              <Text style={styles.footerColTitle}>EXPLORE</Text>
-              <Pressable onPress={() => navigation.navigate('HotelsTab')}>
-                <Text style={styles.footerColLink}>Rooms & Suites</Text>
-              </Pressable>
-              <Pressable onPress={() => navigation.navigate('GalleryTab')}>
-                <Text style={styles.footerColLink}>Curated Experiences</Text>
-              </Pressable>
-              <Pressable onPress={() => navigation.navigate('WeddingsTab')}>
-                <Text style={styles.footerColLink}>Weddings & Events</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.footerCol}>
-              <Text style={styles.footerColTitle}>SUPPORT</Text>
-              <Text style={styles.footerColItem}>My Bookings</Text>
-              <Text style={styles.footerColItem}>Contact Concierge</Text>
-              <Text style={styles.footerColItem}>+91 96587 100</Text>
-            </View>
-          </View>
-
-          <View style={styles.footerBottom}>
-            <Text style={styles.copyrightText}>
-              © 2026 M2N Group of Hotels & Resorts. All rights reserved.
-            </Text>
-          </View>
-        </View>
+        
       </ScrollView>
 
       {/* =================================================================== */}

@@ -1,12 +1,13 @@
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import RoomCard from '../components/rooms/RoomCard';
 import { rooms } from '../data/siteData';
 import { COLORS } from '../theme/colors';
 
 export default function RoomsScreen({ navigation }) {
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
       <View style={styles.header}>

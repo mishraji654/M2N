@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Pressable,
   Image,
@@ -12,6 +11,7 @@ import {
   Modal,
   Platform
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { curatedExperiences, brand } from '../data/siteData';
@@ -61,7 +61,7 @@ export default function GalleryScreen({ navigation }) {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Floating Animated Toast Banner */}
@@ -194,7 +194,7 @@ export default function GalleryScreen({ navigation }) {
                     }}
                   >
                     <Text style={styles.planBtnText}>Plan</Text>
-                    <Ionicons name="arrow-up-forward" size={15} color="#0F172A" />
+                    <Ionicons name="arrow-forward" size={15} color="#0F172A" />
                   </Pressable>
                 </View>
               </View>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -6,12 +6,14 @@ import {
   StyleSheet,
   Pressable,
   Image,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   Platform,
-  Dimensions
+  Dimensions,
+  Animated,
+  Easing
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 const MENU_PAIRS = [
@@ -38,6 +40,32 @@ const MENU_PAIRS = [
 ];
 
 export default function LuxuryMenuOverlay({ visible, onClose, navigation, onSelectSpecial }) {
+  // 10 menu item blocks + 1 footer card = 11 animated blocks
+  const anims = useRef(
+    [...Array(11)].map(() => new Animated.Value(0))
+  ).current;
+
+  useEffect(() => {
+    if (visible) {
+      // Reset all blocks before starting the cascade
+      anims.forEach((anim) => anim.setValue(0));
+
+      // Staggered top-drop animation with 0.5s duration per block
+      const animations = anims.map((anim) =>
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 480, // ~0.5s per block
+          easing: Easing.out(Easing.back(1.4)), // Elastic bounce like dropping/throwing from top
+          useNativeDriver: true
+        })
+      );
+
+      Animated.stagger(50, animations).start();
+    } else {
+      anims.forEach((anim) => anim.setValue(0));
+    }
+  }, [visible]);
+
   const handleItemPress = (item) => {
     onClose();
 
@@ -48,7 +76,6 @@ export default function LuxuryMenuOverlay({ visible, onClose, navigation, onSele
     } else if (item.route === 'HotelsTab') {
       navigation.navigate('HotelsTab');
     } else if (item.route === 'Rooms') {
-      // Rooms is in HomeStack or HotelsStack
       navigation.navigate('Rooms');
     } else if (item.route === 'DiningTab') {
       navigation.navigate('DiningTab');
@@ -75,7 +102,7 @@ export default function LuxuryMenuOverlay({ visible, onClose, navigation, onSele
       transparent={false}
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
         {/* Top Header matching m2nhotels.com */}
@@ -102,39 +129,124 @@ export default function LuxuryMenuOverlay({ visible, onClose, navigation, onSele
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.gridWrapper}>
-            {MENU_PAIRS.map((pair, rowIndex) => (
-              <View key={`row-${rowIndex}`} style={styles.gridRow}>
-                {/* Left Column Item */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.menuItem,
-                    styles.leftCol,
-                    pressed && styles.menuItemPressed
-                  ]}
-                  onPress={() => handleItemPress(pair[0])}
-                >
-                  <Text style={styles.itemTitle}>{pair[0].title}</Text>
-                  <Text style={styles.itemNumber}>{pair[0].number}</Text>
-                </Pressable>
+            {MENU_PAIRS.map((pair, rowIndex) => {
+              const leftIdx = rowIndex * 2;
+              const rightIdx = rowIndex * 2 + 1;
 
-                {/* Right Column Item */}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.menuItem,
-                    styles.rightCol,
-                    pressed && styles.menuItemPressed
-                  ]}
-                  onPress={() => handleItemPress(pair[1])}
-                >
-                  <Text style={styles.itemTitle}>{pair[1].title}</Text>
-                  <Text style={styles.itemNumber}>{pair[1].number}</Text>
-                </Pressable>
-              </View>
-            ))}
+              return (
+                <View key={`row-${rowIndex}`} style={styles.gridRow}>
+                  {/* Left Column Block */}
+                  <Animated.View
+                    style={[
+                      styles.animatedCard,
+                      {
+                        opacity: anims[leftIdx].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 1]
+                        }),
+                        transform: [
+                          {
+                            translateY: anims[leftIdx].interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-45, 0]
+                            })
+                          },
+                          {
+                            scale: anims[leftIdx].interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.92, 1]
+                            })
+                          }
+                        ]
+                      }
+                    ]}
+                  >
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.menuCard,
+                        pressed && styles.menuCardPressed
+                      ]}
+                      onPress={() => handleItemPress(pair[0])}
+                    >
+                      <View style={styles.cardHeader}>
+                        <Text style={styles.cardNumber}>{pair[0].number}</Text>
+                        <Ionicons name="arrow-forward" size={14} color="#EA580C" style={styles.cardArrow} />
+                      </View>
+                      <Text style={styles.cardTitle} numberOfLines={2}>{pair[0].title}</Text>
+                    </Pressable>
+                  </Animated.View>
+
+                  {/* Right Column Block */}
+                  <Animated.View
+                    style={[
+                      styles.animatedCard,
+                      {
+                        opacity: anims[rightIdx].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 1]
+                        }),
+                        transform: [
+                          {
+                            translateY: anims[rightIdx].interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-45, 0]
+                            })
+                          },
+                          {
+                            scale: anims[rightIdx].interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.92, 1]
+                            })
+                          }
+                        ]
+                      }
+                    ]}
+                  >
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.menuCard,
+                        pressed && styles.menuCardPressed
+                      ]}
+                      onPress={() => handleItemPress(pair[1])}
+                    >
+                      <View style={styles.cardHeader}>
+                        <Text style={styles.cardNumber}>{pair[1].number}</Text>
+                        <Ionicons name="arrow-forward" size={14} color="#EA580C" style={styles.cardArrow} />
+                      </View>
+                      <Text style={styles.cardTitle} numberOfLines={2}>{pair[1].title}</Text>
+                    </Pressable>
+                  </Animated.View>
+                </View>
+              );
+            })}
           </View>
 
           {/* Bottom Brand Story & Hotline */}
-          <View style={styles.footerNote}>
+          <Animated.View
+            style={[
+              styles.footerNote,
+              {
+                opacity: anims[10].interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 1]
+                }),
+                transform: [
+                  {
+                    translateY: anims[10].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-35, 0]
+                    })
+                  },
+                  {
+                    scale: anims[10].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.94, 1]
+                    })
+                  }
+                ]
+              }
+            ]}
+          >
             <View style={styles.footerDivider} />
             <View style={styles.footerRow}>
               <View>
@@ -152,7 +264,7 @@ export default function LuxuryMenuOverlay({ visible, onClose, navigation, onSele
                 <Text style={styles.conciergePillText}>+91 96587 100</Text>
               </Pressable>
             </View>
-          </View>
+          </Animated.View>
         </ScrollView>
       </SafeAreaView>
     </Modal>
@@ -197,76 +309,88 @@ const styles = StyleSheet.create({
     flex: 1
   },
   contentContainer: {
-    paddingVertical: 32,
-    paddingHorizontal: 24,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
     ...Platform.select({
       web: {
-        maxWidth: 960,
+        maxWidth: 720,
         marginHorizontal: 'auto',
         width: '100%'
       }
     })
   },
   gridWrapper: {
-    gap: Platform.OS === 'web' ? 24 : 16
+    gap: 12
   },
   gridRow: {
     flexDirection: 'row',
+    gap: 12,
+    alignItems: 'stretch'
+  },
+  animatedCard: {
+    flex: 1
+  },
+  menuCard: {
+    flex: 1,
+    minHeight: 90,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1.2,
+    borderColor: '#F1F5F9',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1
+  },
+  menuCardPressed: {
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FED7AA',
+    transform: [{ scale: 0.98 }]
+  },
+  cardHeader: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: Platform.OS === 'web' ? 22 : 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9'
+    marginBottom: 8
   },
-  menuItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    paddingVertical: 4
+  cardNumber: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#EA580C',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    letterSpacing: 0.5
   },
-  leftCol: {
-    paddingRight: 20
+  cardArrow: {
+    opacity: 0.7
   },
-  rightCol: {
-    paddingLeft: 20,
-    borderLeftWidth: 1,
-    borderLeftColor: '#F1F5F9'
-  },
-  menuItemPressed: {
-    opacity: 0.65
-  },
-  itemTitle: {
-    fontSize: Platform.OS === 'web' ? 26 : 17,
+  cardTitle: {
+    fontSize: Platform.OS === 'web' ? 18 : 14.5,
     fontWeight: '800',
     color: '#0F172A',
     letterSpacing: 0.3,
     fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
-    flexShrink: 1
-  },
-  itemNumber: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#94A3B8',
-    marginLeft: 12,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace'
+    lineHeight: 20
   },
   footerNote: {
-    marginTop: 48,
-    paddingTop: 12
+    marginTop: 36,
+    paddingTop: 8
   },
   footerDivider: {
     width: '100%',
     height: 1,
     backgroundColor: '#E2E8F0',
-    marginBottom: 24
+    marginBottom: 20
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 16
+    gap: 14
   },
   footerBrand: {
     fontSize: 14,

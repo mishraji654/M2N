@@ -1,5 +1,6 @@
 import React from 'react';
-import { ScrollView, View, Text, Linking, StyleSheet, Pressable, SafeAreaView, StatusBar } from 'react-native';
+import { ScrollView, View, Text, Linking, StyleSheet, Pressable, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { contact } from '../data/siteData';
 import { COLORS } from '../theme/colors';
@@ -10,7 +11,7 @@ export default function ContactScreen({ navigation }) {
   const openEmail = () => Linking.openURL(`mailto:${contact.email}`);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
       <View style={styles.header}>

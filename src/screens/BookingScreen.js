@@ -1,5 +1,6 @@
 import React from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { ScrollView, View, Text, Pressable, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import BookingForm from '../components/booking/BookingForm';
 import { COLORS } from '../theme/colors';
@@ -8,7 +9,7 @@ export default function BookingScreen({ route, navigation }) {
   const hotel = route.params?.hotel;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
       <View style={styles.header}>
