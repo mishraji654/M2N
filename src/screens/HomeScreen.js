@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   ScrollView,
@@ -10,18 +10,16 @@ import {
   Pressable,
   ImageBackground,
   Platform,
-  Alert,
-  Animated,
   Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import HotelCard from '../components/hotels/HotelCard';
 import LuxuryMenuOverlay from '../components/common/LuxuryMenuOverlay';
+import AiAssistantModal from '../components/common/AiAssistantModal';
 import {
   brand,
-  serviceTabs,
   trustPillars,
   exclusiveOffers,
   curatedExperiences,
@@ -39,155 +37,34 @@ const DESTINATIONS = [
 ];
 
 const PROPERTY_FILTERS = ['All Stays', 'Heritage Palaces', 'Mountain Lodges', 'Beach Villas'];
+const OFFER_TABS = ['Trending', 'Hotels', 'Flights', 'Holidays'];
+
+const TOP_NAV_TABS = [
+  { id: 'home', label: 'Home', icon: 'home', route: 'Home' },
+  { id: 'hotel', label: 'Hotel', icon: 'business', route: 'HotelsTab' },
+  { id: 'rooms', label: 'Rooms', icon: 'bed', route: 'Rooms' },
+  { id: 'gallery', label: 'Gallery', icon: 'images', route: 'Gallery' },
+  { id: 'offers', label: 'Offers', icon: 'pricetag', route: 'Offers' },
+  { id: 'spa', label: 'Spa & Wellness', icon: 'leaf', route: 'SpaWellness' }
+];
 
 export default function HomeScreen({ navigation }) {
-  const [activeTab, setActiveTab] = useState('stays');
   const [selectedLocation, setSelectedLocation] = useState('All Destinations');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSearchModal, setShowSearchModal] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showGuestsPicker, setShowGuestsPicker] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All Stays');
+  const [activeOfferTab, setActiveOfferTab] = useState('Trending');
   const [showMenuOverlay, setShowMenuOverlay] = useState(false);
-  const mainScrollViewRef = useRef(null);
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [servicesExpanded, setServicesExpanded] = useState(true);
 
   // Guests State
   const [rooms, setRooms] = useState(1);
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
 
-  // Toast Notification State
-  const [toastMessage, setToastMessage] = useState('');
-  const toastY = useRef(new Animated.Value(-80)).current;
-
-  // Pulse & Tab Transition Animations
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const tabFadeAnim = useRef(new Animated.Value(1)).current;
-  const heroFadeAnim = useRef(new Animated.Value(0)).current;
-  const heroSlideAnim = useRef(new Animated.Value(24)).current;
-  const heroZoomAnim = useRef(new Animated.Value(1)).current;
-  const searchFadeAnim = useRef(new Animated.Value(0)).current;
-  const searchSlideAnim = useRef(new Animated.Value(30)).current;
-  const offerBadgePulse = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    // 1. Initial Hero and Search Widget Entrance Animation
-    Animated.parallel([
-      Animated.timing(heroFadeAnim, {
-        toValue: 1,
-        duration: 850,
-        useNativeDriver: true
-      }),
-      Animated.spring(heroSlideAnim, {
-        toValue: 0,
-        friction: 7,
-        tension: 40,
-        useNativeDriver: true
-      }),
-      Animated.sequence([
-        Animated.delay(180),
-        Animated.parallel([
-          Animated.timing(searchFadeAnim, {
-            toValue: 1,
-            duration: 750,
-            useNativeDriver: true
-          }),
-          Animated.spring(searchSlideAnim, {
-            toValue: 0,
-            friction: 6,
-            tension: 35,
-            useNativeDriver: true
-          })
-        ])
-      ])
-    ]).start();
-
-    // 2. Slow Luxury Ken Burns zoom loop on Hero background
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(heroZoomAnim, {
-          toValue: 1.07,
-          duration: 8000,
-          useNativeDriver: true
-        }),
-        Animated.timing(heroZoomAnim, {
-          toValue: 1,
-          duration: 8000,
-          useNativeDriver: true
-        })
-      ])
-    ).start();
-
-    // 3. Subtle continuous breathing animation on Flagship badge
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.07,
-          duration: 1300,
-          useNativeDriver: true
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1300,
-          useNativeDriver: true
-        })
-      ])
-    ).start();
-
-    // 4. Subtle offer badge pulse loop
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(offerBadgePulse, {
-          toValue: 1.08,
-          duration: 1400,
-          useNativeDriver: true
-        }),
-        Animated.timing(offerBadgePulse, {
-          toValue: 1,
-          duration: 1400,
-          useNativeDriver: true
-        })
-      ])
-    ).start();
-  }, [heroFadeAnim, heroSlideAnim, heroZoomAnim, searchFadeAnim, searchSlideAnim, pulseAnim, offerBadgePulse]);
-
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    Animated.sequence([
-      Animated.spring(toastY, {
-        toValue: 20,
-        friction: 6,
-        tension: 40,
-        useNativeDriver: true
-      }),
-      Animated.delay(2200),
-      Animated.timing(toastY, {
-        toValue: -80,
-        duration: 300,
-        useNativeDriver: true
-      })
-    ]).start();
-  };
-
-  const handleTabChange = (tabId) => {
-    Animated.sequence([
-      Animated.timing(tabFadeAnim, { toValue: 0.3, duration: 100, useNativeDriver: true }),
-      Animated.timing(tabFadeAnim, { toValue: 1, duration: 250, useNativeDriver: true })
-    ]).start();
-    setActiveTab(tabId);
-
-    if (tabId === 'dining') {
-      navigation.navigate('DiningTab');
-    } else if (tabId === 'experiences') {
-      navigation.navigate('GalleryTab');
-    } else if (tabId === 'weddings') {
-      navigation.navigate('WeddingsTab');
-    } else if (tabId === 'stays') {
-      navigation.navigate('HotelsTab');
-    }
-  };
-
-  // Filter hotels based on location, search query, and category
+  // Filter Hotels based on Search & Category
   const filteredHotels = hotels.filter((hotel) => {
     const matchLocation =
       selectedLocation === 'All Destinations' ||
@@ -195,345 +72,467 @@ export default function HomeScreen({ navigation }) {
       hotel.name.toLowerCase().includes(selectedLocation.toLowerCase());
 
     const matchSearch =
-      !searchQuery ||
+      searchQuery.trim() === '' ||
       hotel.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      hotel.location.toLowerCase().includes(searchQuery.toLowerCase());
+      hotel.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      hotel.description.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchCategory =
       selectedCategory === 'All Stays' ||
-      (selectedCategory === 'Heritage Palaces' && hotel.name.includes('Heritage')) ||
+      (selectedCategory === 'Heritage Palaces' && (hotel.name.includes('Palace') || hotel.name.includes('Heritage'))) ||
       (selectedCategory === 'Mountain Lodges' && hotel.name.includes('Mountain')) ||
       (selectedCategory === 'Beach Villas' && (hotel.name.includes('Villa') || hotel.location.includes('Goa')));
 
     return matchLocation && matchSearch && matchCategory;
   });
 
+  // Filter Offers based on active tab
+  const displayOffers = exclusiveOffers.filter((o) => {
+    if (activeOfferTab === 'Trending') return true;
+    if (activeOfferTab === 'Hotels') return o.title.toLowerCase().includes('stay') || o.title.toLowerCase().includes('night') || o.title.toLowerCase().includes('palace');
+    if (activeOfferTab === 'Flights') return o.title.toLowerCase().includes('weekend') || o.title.toLowerCase().includes('flight') || o.title.toLowerCase().includes('retreat');
+    if (activeOfferTab === 'Holidays') return o.title.toLowerCase().includes('escape') || o.title.toLowerCase().includes('package') || o.title.toLowerCase().includes('holiday');
+    return true;
+  });
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Floating Animated Toast Banner */}
-      <Animated.View style={[styles.toastContainer, { transform: [{ translateY: toastY }] }]}>
-        <View style={styles.toastCard}>
-          <Ionicons name="checkmark-circle" size={20} color="#EA580C" style={{ marginRight: 8 }} />
-          <Text style={styles.toastText}>{toastMessage}</Text>
-        </View>
-      </Animated.View>
-
       {/* =================================================================== */}
-      {/* TOP HEADER: M2N LOGO & ACTION SHORTCUTS                             */}
+      {/* 1. MAKEMYTRIP NAVBAR: MENU (LEFT), EMPTY CENTER, CASH/BIZ (RIGHT)   */}
       {/* =================================================================== */}
       <View style={styles.topBar}>
+        {/* Left: Hamburger Menu with Red Dot Badge */}
         <Pressable
-          style={styles.logoContainer}
-          onPress={() => navigation.navigate('HomeTab')}
-          hitSlop={8}
+          style={({ pressed }) => [styles.menuButton, pressed && { opacity: 0.7 }]}
+          onPress={() => setShowMenuOverlay(true)}
+          hitSlop={12}
         >
-          <Image
-            source={require('../../assets/m2n_logo1.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <View style={styles.hamburgerContainer}>
+            <View style={styles.hamburgerLineLong} />
+            <View style={styles.hamburgerLineMid} />
+            <View style={styles.hamburgerLineLong} />
+            <View style={styles.hamburgerRedDot} />
+          </View>
         </Pressable>
 
-        <View style={styles.topActions}>
+        {/* Center: Clean whitespace, NO logo */}
+        <View style={styles.navbarSpacer} />
+
+        {/* Right: myCash & myBiz Badges */}
+        <View style={styles.topRightActions}>
           <Pressable
-            style={({ pressed }) => [styles.iconBtn, pressed && { backgroundColor: '#F1F5F9' }]}
+            style={({ pressed }) => [styles.cashPill, pressed && { opacity: 0.8 }]}
             onPress={() => navigation.navigate('MoreTab')}
           >
-            <Ionicons name="person-outline" size={20} color="#0F172A" />
+            <Text style={styles.cashPillPrefix}>my</Text>
+            <Text style={styles.cashPillTitle}>Cash</Text>
           </Pressable>
 
           <Pressable
-            style={({ pressed }) => [styles.iconBtn, pressed && { backgroundColor: '#F1F5F9' }]}
-            onPress={() => setShowMenuOverlay(true)}
+            style={({ pressed }) => [styles.bizBadge, pressed && { opacity: 0.85 }]}
+            onPress={() => navigation.navigate('MoreTab')}
           >
-            <Ionicons name="menu-outline" size={22} color="#0F172A" />
+            <Text style={styles.bizBadgePrefix}>my</Text>
+            <Text style={styles.bizBadgeTitle}>Biz</Text>
           </Pressable>
         </View>
       </View>
 
-      {/* Expandable Quick Search Bar */}
-      {showSearchModal && (
-        <View style={styles.searchBarWrapper}>
-          <Ionicons name="search" size={18} color="#64748B" style={{ marginRight: 8 }} />
+      {/* =================================================================== */}
+      {/* 2. MAKEMYTRIP PILL-SHAPED SMART SEARCH BAR                           */}
+      {/* =================================================================== */}
+      <View style={styles.searchBarContainer}>
+        <View style={styles.searchPill}>
+          <Ionicons name="sparkles" size={17} color="#EA580C" style={styles.searchSparkleIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search hotel name, city (e.g. Lucknow, Jaipur)..."
-            placeholderTextColor="#94A3B8"
+            placeholder="Ask Myra about 'Things to do in Jaipur'..."
+            placeholderTextColor="#64748B"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            autoFocus
           />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+          {searchQuery.length > 0 ? (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={10} style={{ marginRight: 6 }}>
               <Ionicons name="close-circle" size={18} color="#94A3B8" />
             </Pressable>
-          )}
+          ) : null}
+
+          {/* Right Action Pill: Speak / Ask AI */}
+          <Pressable
+            style={styles.searchActionPill}
+            onPress={() => setShowAiModal(true)}
+          >
+            <View style={styles.speakSoundwaves}>
+              <View style={[styles.soundwaveBar, { height: 7 }]} />
+              <View style={[styles.soundwaveBar, { height: 12 }]} />
+              <View style={[styles.soundwaveBar, { height: 9 }]} />
+            </View>
+            <Text style={styles.searchActionText}>Speak</Text>
+          </Pressable>
         </View>
-      )}
+      </View>
 
       {/* =================================================================== */}
-      {/* OFFICIAL SERVICE TABS (Stays, Dine-In, Experiences, Weddings)       */}
+      {/* 2B. TOP HORIZONTAL NAVIGATION BAR (Home, Hotel, Rooms, Gallery, Offers, Spa) */}
       {/* =================================================================== */}
-      <View style={styles.serviceTabsWrapper}>
+      <View style={styles.topNavBarContainer}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.serviceTabsContent}
+          contentContainerStyle={styles.topNavBarScroll}
         >
-          {serviceTabs.map((tab) => {
-            const isActive = activeTab === tab.id;
+          {TOP_NAV_TABS.map((tab) => {
+            const isActive = tab.id === 'home';
             return (
               <Pressable
                 key={tab.id}
-                style={[styles.serviceTab, isActive && styles.serviceTabActive]}
-                onPress={() => handleTabChange(tab.id)}
+                style={[styles.topNavTabItem, isActive && styles.topNavTabItemActive]}
+                onPress={() => {
+                  if (tab.route === 'Home') return;
+                  navigation.navigate(tab.route);
+                }}
               >
                 <Ionicons
                   name={tab.icon}
-                  size={16}
+                  size={15}
                   color={isActive ? '#EA580C' : '#64748B'}
-                  style={{ marginRight: 6 }}
+                  style={{ marginRight: 5 }}
                 />
-                <Text style={[styles.serviceTabText, isActive && styles.serviceTabTextActive]}>
+                <Text style={[styles.topNavTabText, isActive && styles.topNavTabTextActive]}>
                   {tab.label}
                 </Text>
-                {isActive && <View style={styles.activeTabIndicator} />}
+                {isActive && <View style={styles.topNavActiveIndicator} />}
               </Pressable>
             );
           })}
         </ScrollView>
       </View>
 
+      {/* Main Scrollable Content */}
       <ScrollView
-        ref={mainScrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={{ opacity: tabFadeAnim }}>
-          {/* =============================================================== */}
-          {/* 1. HERO SECTION: ZAARANG GRAND PROPERTY & SEARCH WIDGET          */}
-          {/* =============================================================== */}
-          <View style={styles.heroContainer}>
-            <View style={styles.heroImageWrapper}>
-              <Animated.Image
-                source={require('../../assets/zaarang_hero.jpg')}
-                style={[
-                  styles.heroImageBg,
-                  {
-                    transform: [{ scale: heroZoomAnim }]
-                  }
-                ]}
-                resizeMode="cover"
+        {/* ================================================================= */}
+        {/* 3. PRIMARY 3 ACTION CARDS (Flights, Hotels, Holiday Packages)     */}
+        {/* ================================================================= */}
+        <View style={styles.primaryCardsRow}>
+          {/* 1. Flights */}
+          <Pressable
+            style={({ pressed }) => [styles.primaryCard, pressed && styles.primaryCardPressed]}
+            onPress={() => navigation.navigate('HotelsTab')}
+          >
+            <View style={styles.primaryGraphicWrap}>
+              <MaterialCommunityIcons
+                name="airplane-takeoff"
+                size={34}
+                color="#EA580C"
+                style={{ transform: [{ rotate: '-8deg' }] }}
               />
-              <LinearGradient
-                colors={['rgba(15, 23, 42, 0.75)', 'rgba(15, 23, 42, 0.25)', 'rgba(15, 23, 42, 0.85)']}
-                style={StyleSheet.absoluteFill}
-              />
-
-              <Animated.View
-                style={[
-                  styles.heroOverlayContent,
-                  {
-                    opacity: heroFadeAnim,
-                    transform: [{ translateY: heroSlideAnim }]
-                  }
-                ]}
-              >
-                <Animated.View style={[styles.heroBadge, { transform: [{ scale: pulseAnim }] }]}>
-                  <Ionicons name="sparkles" size={12} color="#FFFFFF" style={{ marginRight: 5 }} />
-                  <Text style={styles.heroBadgeText}>FLAGSHIP HOTEL</Text>
-                </Animated.View>
-                <Text style={styles.heroTitle}>ZAARANG</Text>
-                <View style={styles.heroSubtitleRow}>
-                  <Ionicons name="restaurant-outline" size={13} color="#FFEDD5" style={{ marginRight: 5 }} />
-                  <Text style={styles.heroSubtitle}>BREAKFAST • LUNCH • DINNER</Text>
-                </View>
-              </Animated.View>
             </View>
+            <Text style={styles.primaryCardTitle}>Flights</Text>
+          </Pressable>
 
-            {/* Luxury Booking Search Widget with smooth float entrance */}
-            <Animated.View
-              style={[
-                styles.searchCard,
-                {
-                  opacity: searchFadeAnim,
-                  transform: [{ translateY: searchSlideAnim }]
-                }
-              ]}
-            >
-              {/* Location Row - Opens Interactive Destination Picker */}
-              <Pressable
-                style={({ pressed }) => [styles.searchRow, pressed && { opacity: 0.8 }]}
-                onPress={() => setShowLocationPicker(true)}
-              >
-                <View style={styles.searchIconCol}>
-                  <Ionicons name="location" size={20} color="#EA580C" />
-                </View>
-                <View style={styles.searchTextCol}>
-                  <Text style={styles.searchLabel}>CITY, PROPERTY OR LOCATION</Text>
-                  <Text style={styles.searchValue}>{selectedLocation}</Text>
-                </View>
-                <Ionicons name="chevron-down" size={18} color="#94A3B8" />
-              </Pressable>
-
-              <View style={styles.searchDivider} />
-
-              {/* Dates & Guests Grid */}
-              <View style={styles.searchGrid}>
-                <Pressable
-                  style={({ pressed }) => [styles.searchGridCol, pressed && { opacity: 0.8 }]}
-                  onPress={() => showToast('📅 Selected Dates: Tomorrow - Next 2 Nights')}
-                >
-                  <Text style={styles.searchLabel}>CHECK-IN & OUT</Text>
-                  <View style={styles.gridValRow}>
-                    <Ionicons name="calendar-outline" size={15} color="#EA580C" style={{ marginRight: 5 }} />
-                    <Text style={styles.searchValueSmall}>Select Dates</Text>
-                  </View>
-                </Pressable>
-
-                <View style={styles.gridDivider} />
-
-                <Pressable
-                  style={({ pressed }) => [styles.searchGridCol, pressed && { opacity: 0.8 }]}
-                  onPress={() => setShowGuestsPicker(true)}
-                >
-                  <Text style={styles.searchLabel}>ROOMS & GUESTS</Text>
-                  <View style={styles.gridValRow}>
-                    <Ionicons name="people-outline" size={15} color="#EA580C" style={{ marginRight: 5 }} />
-                    <Text style={styles.searchValueSmall}>
-                      {rooms} Room, {adults} Adults
-                    </Text>
-                  </View>
-                </Pressable>
+          {/* 2. Hotels */}
+          <Pressable
+            style={({ pressed }) => [styles.primaryCard, pressed && styles.primaryCardPressed]}
+            onPress={() => navigation.navigate('HotelsTab')}
+          >
+            <View style={styles.primaryGraphicWrap}>
+              <View style={styles.hotelGraphicBox}>
+                <MaterialCommunityIcons name="office-building" size={34} color="#EA580C" />
+                <MaterialCommunityIcons name="office-building" size={24} color="#EA580C" style={[styles.hotelSecondaryTower, { opacity: 0.75 }]} />
               </View>
+            </View>
+            <Text style={styles.primaryCardTitle}>Hotels</Text>
+          </Pressable>
 
-              {/* Search Button (M2N Signature Orange) */}
+          {/* 3. Holiday Packages */}
+          <Pressable
+            style={({ pressed }) => [styles.primaryCard, pressed && styles.primaryCardPressed]}
+            onPress={() => navigation.navigate('GalleryTab')}
+          >
+            <View style={styles.primaryGraphicWrap}>
+              <View style={styles.holidayGraphicBox}>
+                <Ionicons name="sunny" size={13} color="#EA580C" style={styles.umbrellaSun} />
+                <MaterialCommunityIcons name="umbrella-beach" size={34} color="#EA580C" />
+              </View>
+            </View>
+            <Text style={styles.primaryCardTitle}>Holiday{'\n'}Packages</Text>
+          </Pressable>
+        </View>
+
+        {/* ================================================================= */}
+        {/* 4. SUB-SERVICES WHITE CARD (4x2 Grid with Chevron Toggle)          */}
+        {/* ================================================================= */}
+        <View style={styles.subServicesCard}>
+          <View style={styles.subServicesGrid}>
+            {/* 1. Stays */}
+            <Pressable
+              style={({ pressed }) => [styles.subServiceItem, pressed && { opacity: 0.65 }]}
+              onPress={() => navigation.navigate('HotelsTab')}
+            >
+              <View style={styles.subGraphicWrap}>
+                <MaterialCommunityIcons name="bed-king" size={28} color="#EA580C" />
+                <Ionicons name="sparkles" size={10} color="#EA580C" style={styles.subServiceBadge} />
+              </View>
+              <Text style={styles.subServiceTitle}>Stays</Text>
+            </Pressable>
+
+            {/* 2. Dining */}
+            <Pressable
+              style={({ pressed }) => [styles.subServiceItem, pressed && { opacity: 0.65 }]}
+              onPress={() => navigation.navigate('Dining')}
+            >
+              <View style={styles.subGraphicWrap}>
+                <MaterialCommunityIcons name="silverware-fork-knife" size={28} color="#EA580C" />
+                <Ionicons name="restaurant" size={10} color="#EA580C" style={styles.subServiceBadge} />
+              </View>
+              <Text style={styles.subServiceTitle}>Dining</Text>
+            </Pressable>
+
+            {/* 3. Experiences */}
+            <Pressable
+              style={({ pressed }) => [styles.subServiceItem, pressed && { opacity: 0.65 }]}
+              onPress={() => navigation.navigate('Gallery')}
+            >
+              <View style={styles.subGraphicWrap}>
+                <Ionicons name="sparkles" size={26} color="#EA580C" />
+                <Ionicons name="star" size={10} color="#EA580C" style={styles.subServiceBadge} />
+              </View>
+              <Text style={styles.subServiceTitle}>Experiences</Text>
+            </Pressable>
+
+            {/* 4. Weddings */}
+            <Pressable
+              style={({ pressed }) => [styles.subServiceItem, pressed && { opacity: 0.65 }]}
+              onPress={() => navigation.navigate('Weddings')}
+            >
+              <View style={styles.subGraphicWrap}>
+                <MaterialCommunityIcons name="crown" size={28} color="#EA580C" />
+                <Ionicons name="heart" size={10} color="#EA580C" style={styles.subServiceBadge} />
+              </View>
+              <Text style={styles.subServiceTitle}>Weddings</Text>
+            </Pressable>
+
+            {servicesExpanded && (
+              <>
+                {/* 5. Rooms & Suites */}
+                <Pressable
+                  style={({ pressed }) => [styles.subServiceItem, pressed && { opacity: 0.65 }]}
+                  onPress={() => navigation.navigate('Rooms')}
+                >
+                  <View style={styles.subGraphicWrap}>
+                    <MaterialCommunityIcons name="bed" size={28} color="#EA580C" />
+                    <Ionicons name="star" size={10} color="#EA580C" style={styles.subServiceBadge} />
+                  </View>
+                  <Text style={styles.subServiceTitle}>Rooms{'\n'}& Suites</Text>
+                </Pressable>
+
+                {/* 6. Spa & Wellness */}
+                <Pressable
+                  style={({ pressed }) => [styles.subServiceItem, pressed && { opacity: 0.65 }]}
+                  onPress={() => navigation.navigate('SpaWellness')}
+                >
+                  <View style={styles.subGraphicWrap}>
+                    <Ionicons name="leaf" size={26} color="#EA580C" />
+                    <Ionicons name="sparkles" size={10} color="#EA580C" style={styles.subServiceBadge} />
+                  </View>
+                  <Text style={styles.subServiceTitle}>Spa &{'\n'}Wellness</Text>
+                </Pressable>
+
+                {/* 7. Offers & Deals */}
+                <Pressable
+                  style={({ pressed }) => [styles.subServiceItem, pressed && { opacity: 0.65 }]}
+                  onPress={() => navigation.navigate('Offers')}
+                >
+                  <View style={styles.subGraphicWrap}>
+                    <Ionicons name="pricetag" size={26} color="#EA580C" />
+                    <Ionicons name="flash" size={10} color="#EA580C" style={styles.subServiceBadge} />
+                  </View>
+                  <Text style={styles.subServiceTitle}>Offers &{'\n'}Deals</Text>
+                </Pressable>
+
+                {/* 8. Airport & Cabs */}
+                <Pressable
+                  style={({ pressed }) => [styles.subServiceItem, pressed && { opacity: 0.65 }]}
+                  onPress={() => navigation.navigate('Contact')}
+                >
+                  <View style={styles.subGraphicWrap}>
+                    <MaterialCommunityIcons name="taxi" size={28} color="#EA580C" />
+                    <Ionicons name="airplane" size={11} color="#EA580C" style={styles.subServiceBadge} />
+                  </View>
+                  <Text style={styles.subServiceTitle}>Airport{'\n'}& Cabs</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+
+          {/* Bottom Chevron Toggle */}
+          <Pressable
+            style={styles.expandChevron}
+            onPress={() => setServicesExpanded(!servicesExpanded)}
+            hitSlop={12}
+          >
+            <Ionicons
+              name={servicesExpanded ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color="#EA580C"
+            />
+          </Pressable>
+        </View>
+
+        {/* ================================================================= */}
+        {/* 5. LOCATION & GUESTS QUICK BAR (Interactive booking bar)           */}
+        {/* ================================================================= */}
+        <View style={styles.quickBarCard}>
+          <Pressable
+            style={styles.quickBarCol}
+            onPress={() => setShowLocationPicker(true)}
+          >
+            <Text style={styles.quickBarLabel}>DESTINATION</Text>
+            <View style={styles.quickBarValRow}>
+              <Ionicons name="location" size={15} color="#EA580C" style={{ marginRight: 4 }} />
+              <Text style={styles.quickBarVal} numberOfLines={1}>{selectedLocation}</Text>
+            </View>
+          </Pressable>
+
+          <View style={styles.quickBarDivider} />
+
+          <Pressable
+            style={styles.quickBarCol}
+            onPress={() => setShowGuestsPicker(true)}
+          >
+            <Text style={styles.quickBarLabel}>OCCUPANCY</Text>
+            <View style={styles.quickBarValRow}>
+              <Ionicons name="people" size={15} color="#EA580C" style={{ marginRight: 4 }} />
+              <Text style={styles.quickBarVal}>{rooms} Room, {adults} Adults</Text>
+            </View>
+          </Pressable>
+
+          <Pressable
+            style={styles.quickSearchBtn}
+            onPress={() => navigation.navigate('HotelsTab')}
+          >
+            <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+          </Pressable>
+        </View>
+
+        {/* ================================================================= */}
+        {/* 6. OFFERS SECTION (MakeMyTrip signature styling)                   */}
+        {/* ================================================================= */}
+        <View style={styles.offersSection}>
+          <View style={styles.offersHeaderRow}>
+            <Text style={styles.offersTitle}>Offers</Text>
+            <Pressable
+              style={styles.viewAllRow}
+              onPress={() => navigation.navigate('Offers')}
+            >
+              <Text style={styles.viewAllText}>View All</Text>
+              <Ionicons name="arrow-forward-circle" size={18} color="#EA580C" />
+            </Pressable>
+          </View>
+
+          {/* Filter Pills */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.offerPillsScroll}
+          >
+            {OFFER_TABS.map((tab) => {
+              const isSelected = activeOfferTab === tab;
+              return (
+                <Pressable
+                  key={tab}
+                  style={[styles.offerPill, isSelected && styles.offerPillActive]}
+                  onPress={() => setActiveOfferTab(tab)}
+                >
+                  <Text style={[styles.offerPillText, isSelected && styles.offerPillTextActive]}>
+                    {tab}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {/* Horizontal Carousel of Offers */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.offersCarousel}
+          >
+            {displayOffers.map((offer) => (
               <Pressable
+                key={offer.id}
                 style={({ pressed }) => [
-                  styles.searchBtn,
-                  pressed && { transform: [{ scale: 0.985 }], opacity: 0.92 }
+                  styles.mmtOfferCard,
+                  pressed && { transform: [{ scale: 0.98 }] }
                 ]}
-                onPress={() => {
-                  showToast(`Searching Stays in ${selectedLocation}...`);
-                  navigation.navigate('HotelsTab');
-                }}
+                onPress={() => navigation.navigate('Offers')}
               >
-                <Ionicons name="search" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                <Text style={styles.searchBtnText}>SEARCH STAYS</Text>
+                <ImageBackground
+                  source={{ uri: offer.image }}
+                  style={styles.mmtOfferBg}
+                  imageStyle={{ borderRadius: 16 }}
+                >
+                  <LinearGradient
+                    colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.88)']}
+                    locations={[0, 1]}
+                    style={StyleSheet.absoluteFill}
+                  />
+
+                  {/* Top Badge */}
+                  <View style={styles.offerBadgeTop}>
+                    <Text style={styles.offerBadgeTopText}>{offer.badge || 'OFFERS'}</Text>
+                  </View>
+
+                  {/* Content Sheet */}
+                  <View style={styles.mmtOfferContent}>
+                    <Text style={styles.mmtOfferTitle} numberOfLines={2}>
+                      {offer.title}
+                    </Text>
+                    <Text style={styles.mmtOfferSub} numberOfLines={1}>
+                      {offer.property} • {offer.discountedPrice || offer.note}
+                    </Text>
+
+                    <View style={styles.mmtOfferFooter}>
+                      <View style={styles.couponTag}>
+                        <Text style={styles.couponTagText}>CODE: M2NROYAL</Text>
+                      </View>
+                      <View style={styles.claimBtn}>
+                        <Text style={styles.claimBtnText}>Book Now</Text>
+                        <Ionicons name="chevron-forward" size={13} color="#FFFFFF" />
+                      </View>
+                    </View>
+                  </View>
+                </ImageBackground>
               </Pressable>
-            </Animated.View>
-          </View>
+            ))}
+          </ScrollView>
+        </View>
 
-          {/* =============================================================== */}
-          {/* SPECIAL TAB VIEWS: DINING / EXPERIENCES / WEDDINGS                */}
-          {/* =============================================================== */}
-          {activeTab === 'dining' && (
-            <View style={styles.specialTabSection}>
-              <View style={styles.specialCard}>
-                <View style={styles.specialCardBadge}>
-                  <Text style={styles.specialBadgeText}>ZAARANG RESTAURANT & BAR</Text>
-                </View>
-                <Text style={styles.specialCardTitle}>Royal Dining & Gourmet Buffet</Text>
-                <Text style={styles.specialCardDesc}>
-                  Experience authentic Awadhi delicacies, Mughlai feasts, and signature cocktails served in royal splendour.
-                </Text>
-
-                <View style={styles.timingGrid}>
-                  <View style={styles.timingItem}>
-                    <Text style={styles.timingTitle}>Breakfast</Text>
-                    <Text style={styles.timingHours}>7:00 - 10:30 AM</Text>
-                  </View>
-                  <View style={styles.timingItem}>
-                    <Text style={styles.timingTitle}>Lunch</Text>
-                    <Text style={styles.timingHours}>12:30 - 3:30 PM</Text>
-                  </View>
-                  <View style={styles.timingItem}>
-                    <Text style={styles.timingTitle}>Dinner</Text>
-                    <Text style={styles.timingHours}>7:30 - 11:30 PM</Text>
-                  </View>
-                </View>
-
-                <Pressable
-                  style={styles.specialActionBtn}
-                  onPress={() => showToast('🍽️ Table reserved for 2 at Zaarang Restaurant!')}
-                >
-                  <Ionicons name="restaurant" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                  <Text style={styles.specialActionBtnText}>Reserve Table Now</Text>
-                </Pressable>
-              </View>
-            </View>
-          )}
-
-          {activeTab === 'weddings' && (
-            <View style={styles.specialTabSection}>
-              <View style={[styles.specialCard, { backgroundColor: '#1E1B4B' }]}>
-                <View style={[styles.specialCardBadge, { backgroundColor: '#F59E0B' }]}>
-                  <Text style={styles.specialBadgeText}>DESTINATION WEDDINGS</Text>
-                </View>
-                <Text style={styles.specialCardTitle}>A Royal Celebration at M2N Palaces</Text>
-                <Text style={styles.specialCardDesc}>
-                  From grand wedding lawns to intimate banquets. Capacity for 1,500+ guests with royal catering and five-star suites.
-                </Text>
-                <Pressable
-                  style={[styles.specialActionBtn, { backgroundColor: '#F59E0B' }]}
-                  onPress={() => showToast('💍 Wedding enquiry received! Concierge will call shortly.')}
-                >
-                  <Ionicons name="heart" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                  <Text style={styles.specialActionBtnText}>Enquire Wedding Dates</Text>
-                </Pressable>
-              </View>
-            </View>
-          )}
-
-          {/* =============================================================== */}
-          {/* 2. BRAND TRUST PILLARS (Screenshot 2)                           */}
-          {/* =============================================================== */}
-          <View style={styles.trustSection}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.trustScroll}
-            >
-              {trustPillars.map((pillar) => (
-                <Pressable
-                  key={pillar.id}
-                  style={({ pressed }) => [
-                    styles.trustCard,
-                    pressed && { transform: [{ scale: 0.96 }], opacity: 0.92 }
-                  ]}
-                  onPress={() => showToast(`✨ ${pillar.title}: ${pillar.subtitle}`)}
-                >
-                  <View style={styles.trustIconCircle}>
-                    <Ionicons name={pillar.icon} size={20} color="#D97706" />
-                  </View>
-                  <Text style={styles.trustTitle}>{pillar.title}</Text>
-                  <Text style={styles.trustSubtitle}>{pillar.subtitle}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* =============================================================== */}
-          {/* 3. FEATURED PROPERTIES (Screenshot 2)                            */}
-          {/* =============================================================== */}
+        {/* ================================================================= */}
+        {/* 7. FEATURED PROPERTIES (Filterable by Category & Search)          */}
+        {/* ================================================================= */}
+        <View style={styles.propertiesSection}>
           <View style={styles.sectionHeaderRow}>
             <View>
               <Text style={styles.sectionTitle}>Featured Properties</Text>
-              <Text style={styles.sectionSubtitle}>Addresses proportioned to their landscape.</Text>
+              <Text style={styles.sectionSubtitle}>Iconic addresses crafted for luxury stays.</Text>
             </View>
             <Pressable
-              style={({ pressed }) => [styles.viewAllBtn, pressed && { opacity: 0.8 }]}
+              style={styles.viewAllRow}
               onPress={() => navigation.navigate('HotelsTab')}
             >
-              <Text style={styles.viewAllText}>View All</Text>
+              <Text style={styles.viewAllPropertiesText}>View All</Text>
               <Ionicons name="arrow-forward" size={14} color="#EA580C" />
             </Pressable>
           </View>
 
-          {/* Interactive Property Category Filter Chips */}
+          {/* Category Chips */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -545,10 +544,7 @@ export default function HomeScreen({ navigation }) {
                 <Pressable
                   key={cat}
                   style={[styles.categoryChip, isSelected && styles.categoryChipActive]}
-                  onPress={() => {
-                    setSelectedCategory(cat);
-                    showToast(`Filtered: ${cat}`);
-                  }}
+                  onPress={() => setSelectedCategory(cat)}
                 >
                   <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextActive]}>
                     {cat}
@@ -558,6 +554,7 @@ export default function HomeScreen({ navigation }) {
             })}
           </ScrollView>
 
+          {/* Hotel Cards List */}
           {filteredHotels.length > 0 ? (
             filteredHotels.slice(0, 3).map((hotel) => (
               <HotelCard
@@ -570,129 +567,97 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.emptyContainer}>
               <Ionicons name="search-outline" size={36} color="#94A3B8" />
               <Text style={styles.emptyTitle}>No Hotels Found</Text>
-              <Text style={styles.emptySubtitle}>Try changing your destination filter above.</Text>
+              <Text style={styles.emptySubtitle}>Try changing your destination or search keyword.</Text>
             </View>
           )}
+        </View>
 
-          {/* =============================================================== */}
-          {/* 4. EXCLUSIVE OFFERS (Screenshot 3)                              */}
-          {/* =============================================================== */}
+        {/* ================================================================= */}
+        {/* 8. EXPLORE DESTINATIONS                                           */}
+        {/* ================================================================= */}
+        <View style={styles.destinationsSection}>
           <View style={styles.sectionHeaderRow}>
             <View>
-              <Text style={styles.sectionTitle}>Exclusive Offers</Text>
-              <Text style={styles.sectionSubtitle}>Handpicked packages & seasonal savings.</Text>
+              <Text style={styles.sectionTitle}>Explore by Destination</Text>
+              <Text style={styles.sectionSubtitle}>From heritage heartlands to coastal escapes.</Text>
             </View>
           </View>
 
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.offersScroll}
+            contentContainerStyle={styles.destScroll}
           >
-            {exclusiveOffers.map((offer) => (
+            {DESTINATIONS.filter((d) => d.id !== 'all').map((dest) => (
               <Pressable
-                key={offer.id}
-                style={({ pressed }) => [
-                  styles.offerCard,
-                  pressed && { transform: [{ scale: 0.98 }], opacity: 0.96 }
-                ]}
-                onPress={() => showToast(`🎉 Offer Applied: ${offer.title}!`)}
+                key={dest.id}
+                style={({ pressed }) => [styles.destCard, pressed && { transform: [{ scale: 0.97 }] }]}
+                onPress={() => {
+                  setSelectedLocation(dest.name);
+                  navigation.navigate('HotelsTab');
+                }}
               >
-                <Image source={{ uri: offer.image }} style={styles.offerImage} resizeMode="cover" />
-                <Animated.View
-                  style={[
-                    styles.offerBadge,
-                    { transform: [{ scale: offerBadgePulse }] }
-                  ]}
-                >
-                  <Text style={styles.offerBadgeText}>{offer.badge}</Text>
-                </Animated.View>
-
-                <View style={styles.offerInfo}>
-                  <Text style={styles.offerTitle}>{offer.title}</Text>
-                  <Text style={styles.offerProperty}>{offer.property}</Text>
-                  <Text style={styles.offerDetails}>{offer.details}</Text>
-
-                  <View style={styles.offerPriceRow}>
-                    {offer.originalPrice && (
-                      <Text style={styles.offerOriginalPrice}>{offer.originalPrice}</Text>
-                    )}
-                    <Text style={styles.offerFinalPrice}>
-                      {offer.discountedPrice || offer.note}
-                    </Text>
-                  </View>
-
-                  <View style={styles.claimCouponRow}>
-                    <Text style={styles.claimCouponText}>Tap to Claim</Text>
-                    <Ionicons name="arrow-forward-circle" size={16} color="#EA580C" />
-                  </View>
+                <View style={styles.destIconBox}>
+                  <Ionicons name={dest.icon} size={22} color="#EA580C" />
                 </View>
+                <Text style={styles.destCardTitle}>{dest.name}</Text>
+                <Text style={styles.destCardSub}>{dest.subtitle}</Text>
               </Pressable>
             ))}
           </ScrollView>
+        </View>
 
-          {/* =============================================================== */}
-          {/* 5. CURATED EXPERIENCES (Screenshot 4)                           */}
-          {/* =============================================================== */}
-          <View style={styles.sectionHeaderRow}>
-            <View>
-              <Text style={styles.sectionTitle}>Curated Experiences</Text>
-              <Text style={styles.sectionSubtitle}>Moments crafted with absolute precision.</Text>
-            </View>
+        {/* ================================================================= */}
+        {/* 9. M2N TRUST PILLARS                                              */}
+        {/* ================================================================= */}
+        <View style={styles.trustSection}>
+          <View style={styles.trustCardContainer}>
+            {trustPillars.map((pillar) => (
+              <View key={pillar.id} style={styles.trustItem}>
+                <View style={styles.trustIconCircle}>
+                  <Ionicons name={pillar.icon} size={20} color="#EA580C" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.trustTitle}>{pillar.title}</Text>
+                  <Text style={styles.trustSubtitle}>{pillar.subtitle}</Text>
+                </View>
+              </View>
+            ))}
           </View>
+        </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.expScroll}
+        {/* ================================================================= */}
+        {/* 10. M2N LOYALTY CLUB BANNER                                       */}
+        {/* ================================================================= */}
+        <View style={styles.loyaltyBanner}>
+          <LinearGradient
+            colors={['#0F172A', '#1E293B']}
+            style={styles.loyaltyGradient}
           >
-            {curatedExperiences.map((exp) => (
-              <Pressable
-                key={exp.id}
-                style={({ pressed }) => [
-                  styles.expCard,
-                  pressed && { transform: [{ scale: 0.97 }] }
-                ]}
-                onPress={() => showToast(`✨ Selected Experience: ${exp.title}`)}
-              >
-                <Image source={{ uri: exp.image }} style={styles.expImage} resizeMode="cover" />
-                <LinearGradient
-                  colors={['transparent', 'rgba(0, 0, 0, 0.85)']}
-                  style={StyleSheet.absoluteFill}
-                />
-                <View style={styles.expOverlay}>
-                  <Text style={styles.expTag}>{exp.tag}</Text>
-                  <Text style={styles.expTitle}>{exp.title}</Text>
-                </View>
-              </Pressable>
-            ))}
-          </ScrollView>
-
-          {/* =============================================================== */}
-          {/* 6. M2N RESERVE BANNER (Screenshot 4)                             */}
-          {/* =============================================================== */}
-          <View style={styles.reserveBanner}>
-            <View style={styles.reserveContent}>
-              <Text style={styles.reservePre}>LOYALTY PRIVILEGES</Text>
-              <Text style={styles.reserveTitle}>M2N Reserve</Text>
-              <Text style={styles.reserveSubtitle}>
-                Join our exclusive loyalty program. Earn reward points & complimentary upgrades on every stay.
+            <View style={styles.loyaltyHeader}>
+              <View style={styles.loyaltyBadge}>
+                <Ionicons name="star" size={12} color="#F59E0B" style={{ marginRight: 4 }} />
+                <Text style={styles.loyaltyBadgeText}>M2N PRIVILEGE</Text>
+              </View>
+              <Text style={styles.loyaltyTitle}>Join M2N Reserve Club</Text>
+              <Text style={styles.loyaltyDesc}>
+                Earn reward points, get complimentary suite upgrades, and access curated VIP dining discounts.
               </Text>
-
-              <Pressable
-                style={({ pressed }) => [styles.reserveBtn, pressed && { opacity: 0.9 }]}
-                onPress={() => showToast('⭐ You have 1,250 M2N Reserve Points available!')}
-              >
-                <Text style={styles.reserveBtnText}>Explore Benefits</Text>
-                <Ionicons name="arrow-forward" size={16} color="#0F172A" />
-              </Pressable>
             </View>
-          </View>
-        </Animated.View>
+
+            <Pressable
+              style={styles.loyaltyBtn}
+              onPress={() => navigation.navigate('MoreTab')}
+            >
+              <Text style={styles.loyaltyBtnText}>Explore Member Privileges</Text>
+              <Ionicons name="arrow-forward" size={15} color="#0F172A" />
+            </Pressable>
+          </LinearGradient>
+        </View>
       </ScrollView>
 
       {/* =================================================================== */}
-      {/* INTERACTIVE MODAL: DESTINATION SELECTOR SHEET                       */}
+      {/* DESTINATION PICKER MODAL SHEET                                      */}
       {/* =================================================================== */}
       <Modal
         visible={showLocationPicker}
@@ -718,7 +683,6 @@ export default function HomeScreen({ navigation }) {
                   onPress={() => {
                     setSelectedLocation(dest.name);
                     setShowLocationPicker(false);
-                    showToast(`📍 Selected: ${dest.name}`);
                   }}
                 >
                   <View style={[styles.destIconWrap, isSelected && styles.destIconWrapActive]}>
@@ -743,7 +707,7 @@ export default function HomeScreen({ navigation }) {
       </Modal>
 
       {/* =================================================================== */}
-      {/* INTERACTIVE MODAL: ROOMS & GUESTS STEPPER                           */}
+      {/* ROOMS & GUESTS STEPPER MODAL SHEET                                  */}
       {/* =================================================================== */}
       <Modal
         visible={showGuestsPicker}
@@ -831,10 +795,7 @@ export default function HomeScreen({ navigation }) {
 
             <Pressable
               style={styles.confirmGuestsBtn}
-              onPress={() => {
-                setShowGuestsPicker(false);
-                showToast(`Occupancy: ${rooms} Room, ${adults} Adults updated!`);
-              }}
+              onPress={() => setShowGuestsPicker(false)}
             >
               <Text style={styles.confirmGuestsBtnText}>Apply Selection</Text>
             </Pressable>
@@ -842,20 +803,18 @@ export default function HomeScreen({ navigation }) {
         </Pressable>
       </Modal>
 
-      {/* Luxury Full-Screen Menu Overlay matching m2nhotels.com */}
+      {/* Luxury Full-Screen Menu Overlay */}
       <LuxuryMenuOverlay
         visible={showMenuOverlay}
         onClose={() => setShowMenuOverlay(false)}
         navigation={navigation}
-        onSelectSpecial={(type) => {
-          if (type === 'spa') {
-            showToast('🌿 M2N Ayurvedic Spa & Wellness: Bespoke treatments available.');
-          } else if (type === 'offers') {
-            showToast('🏷️ Exclusive Offers: 25% Early Bird discount active.');
-          } else if (type === 'journal') {
-            showToast('📖 M2N Heritage Journal: Stories of Awadh & Rajputana.');
-          }
-        }}
+      />
+
+      {/* Interactive AI Concierge (Ask Myra) */}
+      <AiAssistantModal
+        visible={showAiModal}
+        onClose={() => setShowAiModal(false)}
+        navigation={navigation}
       />
     </SafeAreaView>
   );
@@ -876,40 +835,13 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    width: '100%',
-    backgroundColor: '#FFFFFF'
+    backgroundColor: '#F8FAFC'
   },
   scrollContent: {
     paddingBottom: 110
   },
-  toastContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 20,
-    right: 20,
-    zIndex: 999,
-    alignItems: 'center'
-  },
-  toastCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(234, 88, 12, 0.4)'
-  },
-  toastText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700'
-  },
+
+  /* 1. TOP BAR */
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -919,680 +851,690 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     backgroundColor: '#FFFFFF'
   },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start'
+  menuButton: {
+    padding: 6
   },
-  logo: {
-    width: 84,
-    height: 47
+  hamburgerContainer: {
+    width: 24,
+    height: 18,
+    justifyContent: 'space-between',
+    position: 'relative'
   },
-  topActions: {
+  hamburgerLineLong: {
+    width: 22,
+    height: 2.8,
+    backgroundColor: '#0F172A',
+    borderRadius: 2
+  },
+  hamburgerLineMid: {
+    width: 15,
+    height: 2.8,
+    backgroundColor: '#0F172A',
+    borderRadius: 2
+  },
+  hamburgerRedDot: {
+    position: 'absolute',
+    top: -3,
+    right: -2,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: '#EA580C'
+  },
+  navbarSpacer: {
+    flex: 1
+  },
+  topRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8
   },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F8FAFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0'
-  },
-  menuPillBtn: {
+  cashPill: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1
+    alignItems: 'baseline',
+    paddingHorizontal: 8,
+    paddingVertical: 4
   },
-  menuPillBtnText: {
+  cashPillPrefix: {
+    fontSize: 16,
+    fontWeight: '800',
+    fontStyle: 'italic',
     color: '#0F172A',
-    fontSize: 12,
-    fontWeight: '700'
+    letterSpacing: -0.5
   },
-  searchBarWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginBottom: 8,
-    paddingHorizontal: 14,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0'
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
+  cashPillTitle: {
+    fontSize: 15,
+    fontWeight: '800',
     color: '#0F172A'
   },
-  serviceTabsWrapper: {
+  bizBadge: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    backgroundColor: '#EA580C',
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 6
+  },
+  bizBadgePrefix: {
+    fontSize: 12,
+    fontWeight: '800',
+    fontStyle: 'italic',
+    color: '#FFFFFF'
+  },
+  bizBadgeTitle: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginLeft: 2
+  },
+
+  /* 2. SMART SEARCH PILL */
+  searchBarContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 14,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9'
   },
-  serviceTabsContent: {
+  searchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+    paddingRight: 6
+  },
+  searchSparkleIcon: {
+    marginLeft: 14,
+    marginRight: 6
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: '#0F172A',
+    fontWeight: '500',
+    paddingVertical: 8
+  },
+  searchActionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+    borderRadius: 18,
+    paddingHorizontal: 11,
+    paddingVertical: 5.5,
+    gap: 5
+  },
+  speakSoundwaves: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 1.5
+  },
+  soundwaveBar: {
+    width: 2,
+    backgroundColor: '#EA580C',
+    borderRadius: 1
+  },
+  searchActionText: {
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: '#EA580C'
+  },
+
+  /* 3. PRIMARY 4 ACTION CARDS */
+  primaryCardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingTop: 16,
+    paddingBottom: 12,
     gap: 8
   },
-  serviceTab: {
-    flexDirection: 'row',
+  primaryCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    elevation: 2,
+    minHeight: 104
+  },
+  primaryCardPressed: {
+    transform: [{ scale: 0.96 }],
+    backgroundColor: '#F8FAFC'
+  },
+  primaryGraphicWrap: {
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6
+  },
+  hotelGraphicBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center'
+  },
+  hotelSecondaryTower: {
+    marginLeft: -10,
+    marginBottom: 0
+  },
+  holidayGraphicBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative'
   },
-  serviceTabActive: {
-    backgroundColor: '#FFF7ED'
-  },
-  serviceTabText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748B'
-  },
-  serviceTabTextActive: {
-    color: '#EA580C',
-    fontWeight: '800'
-  },
-  activeTabIndicator: {
+  umbrellaSun: {
     position: 'absolute',
-    bottom: -8,
-    left: 14,
-    right: 14,
-    height: 2.5,
-    backgroundColor: '#EA580C',
-    borderRadius: 2
+    top: -4,
+    right: -2
   },
-  heroContainer: {
+  primaryCardTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+    textAlign: 'center',
+    lineHeight: 16
+  },
+
+  /* 4. SUB-SERVICES WHITE CARD */
+  subServicesCard: {
     marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 24
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    paddingTop: 18,
+    paddingBottom: 6,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 16
   },
-  heroImageWrapper: {
-    height: 270,
-    borderRadius: 24,
-    overflow: 'hidden',
-    position: 'relative',
-    justifyContent: 'flex-start',
-    paddingTop: 24,
-    paddingHorizontal: 20
+  subServicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between'
   },
-  heroImageBg: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%'
+  subServiceItem: {
+    width: '25%',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 2
   },
-  heroOverlayContent: {
-    zIndex: 10,
-    maxWidth: '92%'
+  subGraphicWrap: {
+    width: 44,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    position: 'relative'
   },
-  heroBadge: {
+  subServiceBadge: {
+    position: 'absolute',
+    top: -2,
+    right: 2
+  },
+  newPillBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -4,
+    backgroundColor: '#EA580C',
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 1
+  },
+  newPillText: {
+    fontSize: 7.5,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textTransform: 'uppercase'
+  },
+  subServiceTitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1E293B',
+    textAlign: 'center',
+    lineHeight: 14.5
+  },
+  expandChevron: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 24
+  },
+
+  /* 5. QUICK BAR CARD */
+  quickBarCard: {
+    marginHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#EA580C',
-    paddingHorizontal: 11,
-    paddingVertical: 4.5,
-    borderRadius: 14,
-    marginBottom: 8,
-    shadowColor: '#EA580C',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 5,
-    elevation: 3
-  },
-  heroBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10.5,
-    fontWeight: '800',
-    letterSpacing: 1
-  },
-  heroTitle: {
-    color: '#FFFFFF',
-    fontSize: 34,
-    fontWeight: '900',
-    letterSpacing: 2,
-    marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.85)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8
-  },
-  heroSubtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  heroSubtitle: {
-    color: '#FFEDD5',
-    fontSize: 11.5,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4
-  },
-  searchCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 18,
-    marginTop: -36,
-    marginHorizontal: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 8,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#F1F5F9'
+    borderColor: '#E2E8F0',
+    marginBottom: 20
   },
-  searchRow: {
+  quickBarCol: {
+    flex: 1
+  },
+  quickBarLabel: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginBottom: 2
+  },
+  quickBarValRow: {
     flexDirection: 'row',
     alignItems: 'center'
   },
-  searchIconCol: {
+  quickBarVal: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#0F172A'
+  },
+  quickBarDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 12
+  },
+  quickSearchBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#EA580C',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12
+    marginLeft: 8
   },
-  searchTextCol: {
-    flex: 1
+
+  /* 6. OFFERS SECTION */
+  offersSection: {
+    marginBottom: 24
   },
-  searchLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 0.8,
-    marginBottom: 2
-  },
-  searchValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0F172A'
-  },
-  searchDivider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    marginVertical: 14
-  },
-  searchGrid: {
+  offersHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'center'
-  },
-  searchGridCol: {
-    flex: 1
-  },
-  gridValRow: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  searchValueSmall: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0F172A'
-  },
-  gridDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#F1F5F9',
-    marginHorizontal: 12
-  },
-  searchBtn: {
-    marginTop: 16,
-    backgroundColor: '#EA580C',
-    borderRadius: 16,
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#EA580C',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4
-  },
-  searchBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 1
-  },
-  specialTabSection: {
-    marginHorizontal: 16,
-    marginBottom: 20
-  },
-  specialCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: 22,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)'
-  },
-  specialCardBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#EA580C',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 10
-  },
-  specialBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8
-  },
-  specialCardTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 6
-  },
-  specialCardDesc: {
-    color: '#94A3B8',
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: 16
-  },
-  timingGrid: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 16,
-    justifyContent: 'space-between'
-  },
-  timingItem: {
-    alignItems: 'center'
-  },
-  timingTitle: {
-    color: '#EA580C',
-    fontSize: 11,
-    fontWeight: '800',
-    marginBottom: 2
-  },
-  timingHours: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600'
-  },
-  specialActionBtn: {
-    backgroundColor: '#EA580C',
-    borderRadius: 14,
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  specialActionBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13.5,
-    fontWeight: '800'
-  },
-  trustSection: {
-    marginBottom: 26
-  },
-  trustScroll: {
-    paddingHorizontal: 16,
-    gap: 12
-  },
-  trustCard: {
-    width: 140,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    alignItems: 'center',
-    textAlign: 'center'
-  },
-  trustIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FEF3C7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8
-  },
-  trustTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#0F172A',
-    textAlign: 'center',
-    letterSpacing: 0.5,
-    marginBottom: 4
-  },
-  trustSubtitle: {
-    fontSize: 10,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 14
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    alignItems: 'center',
+    paddingHorizontal: 16,
     marginBottom: 12
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
+  offersTitle: {
+    fontSize: 21,
+    fontWeight: '900',
     color: '#0F172A',
-    letterSpacing: -0.3
+    letterSpacing: -0.4
   },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 2
-  },
-  viewAllBtn: {
+  viewAllRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4
   },
   viewAllText: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 13.5,
+    fontWeight: '800',
     color: '#EA580C'
   },
+  viewAllPropertiesText: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#EA580C'
+  },
+  offerPillsScroll: {
+    paddingHorizontal: 16,
+    gap: 8,
+    marginBottom: 14
+  },
+  offerPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0'
+  },
+  offerPillActive: {
+    backgroundColor: '#EA580C',
+    borderColor: '#EA580C'
+  },
+  offerPillText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#475467'
+  },
+  offerPillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '800'
+  },
+  offersCarousel: {
+    paddingHorizontal: 16,
+    gap: 14
+  },
+  mmtOfferCard: {
+    width: 290,
+    height: 180,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  mmtOfferBg: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'space-between',
+    padding: 12
+  },
+  offerBadgeTop: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3.5
+  },
+  offerBadgeTopText: {
+    fontSize: 9.5,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.8
+  },
+  mmtOfferContent: {
+    width: '100%'
+  },
+  mmtOfferTitle: {
+    fontSize: 15.5,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 2,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4
+  },
+  mmtOfferSub: {
+    fontSize: 11.5,
+    color: 'rgba(255,255,255,0.85)',
+    marginBottom: 8
+  },
+  mmtOfferFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  couponTag: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 0.8,
+    borderColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3
+  },
+  couponTagText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5
+  },
+  claimBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EA580C',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    gap: 2
+  },
+  claimBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF'
+  },
+
+  /* 7. PROPERTIES SECTION */
+  propertiesSection: {
+    paddingHorizontal: 16,
+    marginBottom: 24
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 12
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.3
+  },
+  sectionSubtitle: {
+    fontSize: 12.5,
+    color: '#64748B',
+    marginTop: 2
+  },
   categoryChipsScroll: {
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    gap: 8
+    gap: 8,
+    paddingBottom: 12
   },
   categoryChip: {
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
-    backgroundColor: '#F1F5F9',
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0'
   },
   categoryChipActive: {
-    backgroundColor: '#EA580C',
-    borderColor: '#EA580C'
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FED7AA'
   },
   categoryChipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#475467'
+    color: '#64748B'
   },
   categoryChipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '800'
+    color: '#EA580C',
+    fontWeight: '700'
   },
   emptyContainer: {
-    padding: 30,
+    padding: 32,
     alignItems: 'center',
-    justifyContent: 'center'
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0'
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: '#0F172A',
     marginTop: 8
   },
   emptySubtitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: '#64748B',
-    marginTop: 4
+    marginTop: 2
   },
-  offersScroll: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    gap: 16
+
+  /* 8. DESTINATIONS SECTION */
+  destinationsSection: {
+    paddingHorizontal: 16,
+    marginBottom: 24
   },
-  offerCard: {
-    width: 250,
+  destScroll: {
+    gap: 12
+  },
+  destCard: {
+    width: 140,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    overflow: 'hidden',
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    elevation: 1
   },
-  offerImage: {
-    width: '100%',
-    height: 125
-  },
-  offerBadge: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: '#EA580C',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8
-  },
-  offerBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '800'
-  },
-  offerInfo: {
-    padding: 12
-  },
-  offerTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 2
-  },
-  offerProperty: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#64748B',
-    marginBottom: 4
-  },
-  offerDetails: {
-    fontSize: 11,
-    color: '#94A3B8',
+  destIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 8
   },
-  offerPriceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6
-  },
-  offerOriginalPrice: {
-    fontSize: 12,
-    color: '#94A3B8',
-    textDecorationLine: 'line-through'
-  },
-  offerFinalPrice: {
-    fontSize: 15,
+  destCardTitle: {
+    fontSize: 14,
     fontWeight: '800',
-    color: '#EA580C'
+    color: '#0F172A'
   },
-  claimCouponRow: {
+  destCardSub: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2
+  },
+
+  /* 9. TRUST PILLARS */
+  trustSection: {
+    paddingHorizontal: 16,
+    marginBottom: 24
+  },
+  trustCardContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 14
+  },
+  trustItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9'
-  },
-  claimCouponText: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    color: '#EA580C'
-  },
-  expScroll: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
     gap: 12
   },
-  expCard: {
-    width: 170,
-    height: 140,
-    borderRadius: 18,
-    overflow: 'hidden',
-    position: 'relative'
+  trustIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFF7ED',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  expImage: {
-    width: '100%',
-    height: '100%'
-  },
-  expOverlay: {
-    position: 'absolute',
-    bottom: 10,
-    left: 10,
-    right: 10
-  },
-  expTag: {
-    color: '#F59E0B',
-    fontSize: 9.5,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    marginBottom: 2
-  },
-  expTitle: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800'
-  },
-  reserveBanner: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-    borderRadius: 24,
-    backgroundColor: '#0F172A',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)'
-  },
-  reserveContent: {
-    padding: 24
-  },
-  reservePre: {
-    color: '#F59E0B',
-    fontSize: 10.5,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    marginBottom: 6
-  },
-  reserveTitle: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: '900',
-    marginBottom: 8
-  },
-  reserveSubtitle: {
-    color: '#94A3B8',
+  trustTitle: {
     fontSize: 13,
-    lineHeight: 19,
+    fontWeight: '700',
+    color: '#0F172A'
+  },
+  trustSubtitle: {
+    fontSize: 11.5,
+    color: '#64748B'
+  },
+
+  /* 10. LOYALTY CLUB */
+  loyaltyBanner: {
+    paddingHorizontal: 16,
     marginBottom: 16
   },
-  reserveBtn: {
-    alignSelf: 'flex-start',
+  loyaltyGradient: {
+    borderRadius: 20,
+    padding: 20
+  },
+  loyaltyHeader: {
+    marginBottom: 16
+  },
+  loyaltyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 8
+  },
+  loyaltyBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#F59E0B',
+    letterSpacing: 1
+  },
+  loyaltyTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4
+  },
+  loyaltyDesc: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+    lineHeight: 17
+  },
+  loyaltyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 16,
+    borderRadius: 24,
+    paddingVertical: 12,
     gap: 6
   },
-  reserveBtnText: {
-    color: '#0F172A',
+  loyaltyBtnText: {
     fontSize: 13,
-    fontWeight: '800'
+    fontWeight: '800',
+    color: '#0F172A'
   },
-  footerContainer: {
-    backgroundColor: '#0A0A0A',
-    padding: 24,
-    marginTop: 10
-  },
-  footerLogo: {
-    width: 130,
-    height: 44,
-    marginBottom: 8
-  },
-  footerTagline: {
-    color: '#F59E0B',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginBottom: 10
-  },
-  footerStory: {
-    color: '#94A3B8',
-    fontSize: 12,
-    lineHeight: 18,
-    marginBottom: 16
-  },
-  footerDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginBottom: 16
-  },
-  footerContactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8
-  },
-  footerContactText: {
-    color: '#E2E8F0',
-    fontSize: 12.5,
-    fontWeight: '600'
-  },
-  footerCopyright: {
-    color: '#64748B',
-    fontSize: 11,
-    marginTop: 16,
-    textAlign: 'center'
-  },
+
+  /* MODALS */
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end'
   },
   modalSheet: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 22,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
     paddingBottom: 40,
-    maxHeight: '80%'
+    maxHeight: '75%'
   },
   modalHandle: {
-    width: 44,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#E2E8F0',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#CBD5E1',
     alignSelf: 'center',
     marginBottom: 16
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 4
+    color: '#0F172A'
   },
   modalSubtitle: {
     fontSize: 13,
@@ -1603,20 +1545,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#F1F5F9'
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    marginBottom: 4
   },
   destItemActive: {
-    backgroundColor: '#FFF7ED',
-    borderColor: '#EA580C'
+    backgroundColor: '#FFF7ED'
   },
   destIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1627,22 +1566,23 @@ const styles = StyleSheet.create({
   },
   destName: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#0F172A'
   },
   destNameActive: {
     color: '#EA580C',
-    fontWeight: '800'
+    fontWeight: '700'
   },
   destSub: {
     fontSize: 12,
-    color: '#64748B',
-    marginTop: 1
+    color: '#64748B'
   },
+
+  /* STEPPER */
   stepperRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9'
@@ -1654,40 +1594,80 @@ const styles = StyleSheet.create({
   },
   stepperSub: {
     fontSize: 12,
-    color: '#64748B',
-    marginTop: 2
+    color: '#64748B'
   },
   counterGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12
+    gap: 14
   },
   counterBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center'
   },
   counterVal: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#0F172A',
     minWidth: 20,
     textAlign: 'center'
   },
   confirmGuestsBtn: {
-    marginTop: 24,
     backgroundColor: '#EA580C',
-    borderRadius: 16,
-    height: 48,
+    paddingVertical: 14,
+    borderRadius: 24,
     alignItems: 'center',
-    justifyContent: 'center'
+    marginTop: 20
   },
   confirmGuestsBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800'
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#FFFFFF'
+  },
+
+  /* 2B. TOP NAV BAR STYLES */
+  topNavBarContainer: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingVertical: 4
+  },
+  topNavBarScroll: {
+    paddingHorizontal: 12,
+    gap: 4
+  },
+  topNavTabItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'transparent',
+    position: 'relative'
+  },
+  topNavTabItemActive: {
+    backgroundColor: '#FFF7ED'
+  },
+  topNavTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B'
+  },
+  topNavTabTextActive: {
+    fontWeight: '800',
+    color: '#EA580C'
+  },
+  topNavActiveIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 12,
+    right: 12,
+    height: 2.5,
+    backgroundColor: '#EA580C',
+    borderRadius: 1.5
   }
 });

@@ -27,7 +27,7 @@ const MENU_PAIRS = [
   ],
   [
     { id: '05', number: '05', title: 'EXPERIENCES', route: 'GalleryTab' },
-    { id: '06', number: '06', title: 'SPA & WELLNESS', route: 'Spa' }
+    { id: '06', number: '06', title: 'SPA & WELLNESS', route: 'SpaWellness' }
   ],
   [
     { id: '07', number: '07', title: 'MEETINGS & EVENTS', route: 'WeddingsTab' },
@@ -83,15 +83,12 @@ export default function LuxuryMenuOverlay({ visible, onClose, navigation, onSele
       navigation.navigate('GalleryTab');
     } else if (item.route === 'WeddingsTab') {
       navigation.navigate('WeddingsTab');
-    } else if (item.route === 'Spa') {
-      if (onSelectSpecial) onSelectSpecial('spa');
-      else navigation.navigate('MoreTab');
+    } else if (item.route === 'SpaWellness' || item.route === 'Spa') {
+      navigation.navigate('SpaWellness');
     } else if (item.route === 'Offers') {
-      if (onSelectSpecial) onSelectSpecial('offers');
-      else navigation.navigate('HotelsTab');
+      navigation.navigate('Offers');
     } else if (item.route === 'Journal') {
-      if (onSelectSpecial) onSelectSpecial('journal');
-      else navigation.navigate('MoreTab');
+      navigation.navigate('About');
     }
   };
 

@@ -15,6 +15,8 @@ import { COLORS } from '../theme/colors';
 export default function RoomDetailScreen({ route, navigation }) {
   const room = route.params?.room;
 
+  const [isBookmarked, setIsBookmarked] = React.useState(false);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
@@ -28,13 +30,24 @@ export default function RoomDetailScreen({ route, navigation }) {
         <View style={styles.heroWrapper}>
           <Image source={{ uri: room.image }} style={styles.hero} resizeMode="cover" />
 
-          {/* Floating Back Button */}
+          {/* Floating Back & Bookmark Button */}
           <SafeAreaView style={styles.floatingHeader} edges={['top']}>
             <Pressable
               style={({ pressed }) => [styles.headerButton, pressed && { opacity: 0.8 }]}
               onPress={() => navigation.goBack()}
             >
               <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [styles.headerButton, pressed && { opacity: 0.8 }]}
+              onPress={() => setIsBookmarked(!isBookmarked)}
+            >
+              <Ionicons
+                name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+                size={20}
+                color={isBookmarked ? COLORS.primary : '#FFFFFF'}
+              />
             </Pressable>
           </SafeAreaView>
         </View>
@@ -106,6 +119,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 14,
     left: 20,
+    right: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     zIndex: 10
   },
   headerButton: {

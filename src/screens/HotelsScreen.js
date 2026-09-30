@@ -346,7 +346,7 @@ export default function HotelsScreen({ navigation }) {
                         </View>
                       </View>
 
-                      {/* Favorite Heart Button */}
+                      {/* Favorite Bookmark Button */}
                       <Pressable
                         style={styles.cardFavBtn}
                         onPress={(e) => {
@@ -355,9 +355,9 @@ export default function HotelsScreen({ navigation }) {
                         }}
                       >
                         <Ionicons
-                          name={isFav ? 'heart' : 'heart-outline'}
+                          name={isFav ? 'bookmark' : 'bookmark-outline'}
                           size={19}
-                          color={isFav ? '#EF4444' : '#FFFFFF'}
+                          color={isFav ? '#EA580C' : '#FFFFFF'}
                         />
                       </Pressable>
                     </View>

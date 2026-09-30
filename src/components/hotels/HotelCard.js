@@ -6,14 +6,14 @@ import { COLORS } from '../../theme/colors';
 
 export default function HotelCard({ hotel, onPress, featured = true }) {
   const [isFavorite, setIsFavorite] = useState(false);
-  const heartScale = useRef(new Animated.Value(1)).current;
+  const bookmarkScale = useRef(new Animated.Value(1)).current;
 
   const toggleFavorite = (e) => {
     e.stopPropagation();
     setIsFavorite(!isFavorite);
     Animated.sequence([
-      Animated.spring(heartScale, { toValue: 1.45, friction: 3, tension: 80, useNativeDriver: true }),
-      Animated.spring(heartScale, { toValue: 1, friction: 4, tension: 40, useNativeDriver: true })
+      Animated.spring(bookmarkScale, { toValue: 1.45, friction: 3, tension: 80, useNativeDriver: true }),
+      Animated.spring(bookmarkScale, { toValue: 1, friction: 4, tension: 40, useNativeDriver: true })
     ]).start();
   };
 
@@ -36,13 +36,13 @@ export default function HotelCard({ hotel, onPress, featured = true }) {
             <Text style={styles.ratingText}>{hotel.rating}</Text>
           </View>
 
-          {/* Heart / Favorite Button with Spring Bounce */}
+          {/* Bookmark / Favorite Button with Spring Bounce */}
           <Pressable style={styles.favoriteButton} onPress={toggleFavorite}>
-            <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+            <Animated.View style={{ transform: [{ scale: bookmarkScale }] }}>
               <Ionicons
-                name={isFavorite ? 'heart' : 'heart-outline'}
+                name={isFavorite ? 'bookmark' : 'bookmark-outline'}
                 size={18}
-                color={isFavorite ? COLORS.heart : '#FFFFFF'}
+                color={isFavorite ? COLORS.primary : '#FFFFFF'}
               />
             </Animated.View>
           </Pressable>

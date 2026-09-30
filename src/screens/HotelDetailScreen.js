@@ -62,9 +62,9 @@ export default function HotelDetailScreen({ route, navigation }) {
                 onPress={() => setIsFavorite(!isFavorite)}
               >
                 <Ionicons
-                  name={isFavorite ? 'heart' : 'heart-outline'}
+                  name={isFavorite ? 'bookmark' : 'bookmark-outline'}
                   size={20}
-                  color={isFavorite ? COLORS.heart : '#FFFFFF'}
+                  color={isFavorite ? COLORS.primary : '#FFFFFF'}
                 />
               </Pressable>
             </View>

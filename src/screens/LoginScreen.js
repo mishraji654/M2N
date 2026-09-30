@@ -201,7 +201,7 @@ export default function LoginScreen({ navigation }) {
                 style={({ pressed }) => [styles.guestBtn, pressed && { opacity: 0.75 }]}
                 onPress={handleGuest}
               >
-                <Ionicons name="bed-outline" size={17} color="#38BDF8" style={{ marginRight: 6 }} />
+                <Ionicons name="bed-outline" size={17} color="#EA580C" style={{ marginRight: 6 }} />
                 <Text style={styles.guestBtnText}>Browse & Book as Guest</Text>
               </Pressable>
 
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   forgotText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#38BDF8'
+    color: '#EA580C'
   },
   signInButton: {
     backgroundColor: COLORS.primary,
@@ -491,16 +491,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    backgroundColor: 'rgba(14, 165, 233, 0.14)',
+    backgroundColor: 'rgba(234, 88, 12, 0.14)',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(14, 165, 233, 0.35)',
+    borderColor: 'rgba(234, 88, 12, 0.35)',
     marginBottom: 14
   },
   guestBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#38BDF8'
+    color: '#EA580C'
   },
   footerRow: {
     flexDirection: 'row',
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
     fontWeight: '500'
   },
   footerHighlight: {
-    color: '#38BDF8',
+    color: '#EA580C',
     fontSize: 12,
     fontWeight: '800'
   }

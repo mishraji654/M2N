@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet, StatusBar } from 'react-native';
+import { ScrollView, View, Text, Pressable, StyleSheet, StatusBar, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import BookingForm from '../components/booking/BookingForm';
@@ -7,6 +7,7 @@ import { COLORS } from '../theme/colors';
 
 export default function BookingScreen({ route, navigation }) {
   const hotel = route.params?.hotel;
+  const room = route.params?.room;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
@@ -28,7 +29,11 @@ export default function BookingScreen({ route, navigation }) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <BookingForm selectedHotel={hotel} />
+        <BookingForm
+          selectedHotel={hotel}
+          selectedRoom={room}
+          navigation={navigation}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -37,9 +42,20 @@ export default function BookingScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background
+    width: '100%',
+    alignSelf: 'stretch',
+    backgroundColor: COLORS.background,
+    ...Platform.select({
+      web: {
+        maxWidth: 480,
+        width: '100%',
+        marginHorizontal: 'auto',
+        minHeight: '100vh'
+      }
+    })
   },
   header: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -67,9 +83,14 @@ const styles = StyleSheet.create({
   },
   page: {
     flex: 1,
+    width: '100%',
+    alignSelf: 'stretch',
     backgroundColor: COLORS.background
   },
   content: {
+    width: '100%',
+    minWidth: '100%',
+    alignItems: 'stretch',
     paddingBottom: 40
   }
 });

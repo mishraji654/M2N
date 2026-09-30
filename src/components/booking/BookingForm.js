@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,90 +7,113 @@ import {
   Alert,
   StyleSheet
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 
-export default function BookingForm({ selectedHotel }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [checkIn, setCheckIn] = useState('2026-10-15');
-  const [checkOut, setCheckOut] = useState('2026-10-18');
+export default function BookingForm({ selectedHotel, selectedRoom, navigation: propNavigation }) {
+  const hookNav = useNavigation();
+  const nav = propNavigation || hookNav;
+  const isNavigatingRef = useRef(false);
+
+  const [name, setName] = useState('Ansh Yadav');
+  const [email, setEmail] = useState('anshyadav@m2nhotels.com');
+  const [phone, setPhone] = useState('+91 98765 43210');
+  const [checkIn, setCheckIn] = useState('15 Oct 2026');
+  const [checkOut, setCheckOut] = useState('18 Oct 2026');
   const [guestsCount, setGuestsCount] = useState(2);
   const [roomsCount, setRoomsCount] = useState(1);
-  const [isSuccess, setIsSuccess] = useState(false);
 
-  const pricePerNight = selectedHotel?.numericPrice || 135;
+  const propertyName = selectedHotel?.name || selectedRoom?.name || 'Zaarang Hotel & Suites';
+  const propertyLoc = selectedHotel?.location || 'Lucknow, Uttar Pradesh';
+
+  const pricePerNight = selectedHotel?.numericPrice || selectedRoom?.numericPrice || 4500;
   const nights = 3;
   const subtotal = pricePerNight * nights * roomsCount;
   const taxes = Math.round(subtotal * 0.12);
   const total = subtotal + taxes;
 
-  const handleBook = () => {
-    if (!name || !phone) {
-      Alert.alert('Incomplete Details', 'Please provide your name and phone number to complete the reservation.');
-      return;
-    }
-    setIsSuccess(true);
-  };
+  const handleProceedToPayment = () => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 1200);
 
-  if (isSuccess) {
-    return (
-      <View style={styles.successCard}>
-        <View style={styles.successIconCircle}>
-          <Ionicons name="checkmark" size={36} color="#FFFFFF" />
-        </View>
-        <Text style={styles.successTitle}>Booking Confirmed!</Text>
-        <Text style={styles.successMessage}>
-          Thank you, {name}! Your stay at {selectedHotel?.name || 'New York Marriott Marquis'} has been reserved.
-        </Text>
-        <View style={styles.reservationDetailBox}>
-          <Text style={styles.reservationDetailText}>
-            Dates: {checkIn} to {checkOut} ({nights} nights)
-          </Text>
-          <Text style={styles.reservationDetailText}>
-            Guests: {guestsCount} | Total Paid: ${total}
-          </Text>
-        </View>
-        <Pressable
-          style={styles.doneButton}
-          onPress={() => setIsSuccess(false)}
-        >
-          <Text style={styles.doneButtonText}>Make Another Reservation</Text>
-        </Pressable>
-      </View>
-    );
-  }
+    const finalGuestName = name.trim() || 'Ansh Yadav';
+    const finalPhone = phone.trim() || '+91 98765 43210';
+    const finalEmail = email.trim() || 'anshyadav@m2nhotels.com';
+
+    if (nav) {
+      nav.navigate('Payment', {
+        bookingData: {
+          hotelName: propertyName,
+          location: propertyLoc,
+          pricePerNight,
+          nights,
+          roomsCount,
+          guestsCount,
+          subtotal,
+          taxes,
+          total,
+          checkIn,
+          checkOut,
+          name: finalGuestName,
+          email: finalEmail,
+          phone: finalPhone,
+          image: selectedHotel?.image || selectedRoom?.image
+        }
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
-    
+      {/* 1. RESERVATION COST BREAKDOWN (INR / ₹) */}
       <View style={styles.summaryCard}>
         <View style={styles.summaryHeader}>
-          <View>
-            <Text style={styles.summaryHotelName}>{selectedHotel?.name || 'New York Marriott Marquis'}</Text>
-            <Text style={styles.summaryLocation}>{selectedHotel?.location || 'New York, USA'}</Text>
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <Text style={styles.summaryHotelName} numberOfLines={1}>
+              {propertyName}
+            </Text>
+            <Text style={styles.summaryLocation}>
+              <Ionicons name="location-outline" size={13} color="#64748B" /> {propertyLoc}
+            </Text>
           </View>
-          <Text style={styles.summaryRate}>${pricePerNight}<Text style={styles.summaryPerNight}>/night</Text></Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.summaryRate}>
+              ₹{pricePerNight.toLocaleString('en-IN')}
+            </Text>
+            <Text style={styles.summaryPerNight}>per night</Text>
+          </View>
         </View>
 
         <View style={styles.divider} />
 
         <View style={styles.calcRow}>
-          <Text style={styles.calcLabel}>${pricePerNight} × {nights} nights ({roomsCount} room)</Text>
-          <Text style={styles.calcValue}>${subtotal}</Text>
+          <Text style={styles.calcLabel}>
+            ₹{pricePerNight.toLocaleString('en-IN')} × {nights} nights ({roomsCount} room)
+          </Text>
+          <Text style={styles.calcValue}>₹{subtotal.toLocaleString('en-IN')}</Text>
         </View>
+
         <View style={styles.calcRow}>
-          <Text style={styles.calcLabel}>Estimated Taxes & Fees (12%)</Text>
-          <Text style={styles.calcValue}>${taxes}</Text>
+          <Text style={styles.calcLabel}>Hospitality GST & Luxury Taxes (12%)</Text>
+          <Text style={styles.calcValue}>₹{taxes.toLocaleString('en-IN')}</Text>
         </View>
+
+        <View style={styles.divider} />
+
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total Amount</Text>
-          <Text style={styles.totalValue}>${total}</Text>
+          <View>
+            <Text style={styles.totalLabel}>Total Payable Amount</Text>
+            <Text style={styles.totalSub}>All inclusive of taxes & fees</Text>
+          </View>
+          <Text style={styles.totalValue}>₹{total.toLocaleString('en-IN')}</Text>
         </View>
       </View>
 
-  
+      {/* 2. GUESTS & ROOMS COUNTERS */}
       <View style={styles.countersRow}>
         <View style={styles.counterBox}>
           <Text style={styles.counterLabel}>GUESTS</Text>
@@ -99,14 +122,14 @@ export default function BookingForm({ selectedHotel }) {
               style={styles.counterBtn}
               onPress={() => setGuestsCount(Math.max(1, guestsCount - 1))}
             >
-              <Ionicons name="remove" size={16} color={COLORS.text} />
+              <Ionicons name="remove" size={16} color="#0F172A" />
             </Pressable>
             <Text style={styles.counterNumber}>{guestsCount}</Text>
             <Pressable
               style={styles.counterBtn}
               onPress={() => setGuestsCount(guestsCount + 1)}
             >
-              <Ionicons name="add" size={16} color={COLORS.text} />
+              <Ionicons name="add" size={16} color="#0F172A" />
             </Pressable>
           </View>
         </View>
@@ -118,28 +141,28 @@ export default function BookingForm({ selectedHotel }) {
               style={styles.counterBtn}
               onPress={() => setRoomsCount(Math.max(1, roomsCount - 1))}
             >
-              <Ionicons name="remove" size={16} color={COLORS.text} />
+              <Ionicons name="remove" size={16} color="#0F172A" />
             </Pressable>
             <Text style={styles.counterNumber}>{roomsCount}</Text>
             <Pressable
               style={styles.counterBtn}
               onPress={() => setRoomsCount(roomsCount + 1)}
             >
-              <Ionicons name="add" size={16} color={COLORS.text} />
+              <Ionicons name="add" size={16} color="#0F172A" />
             </Pressable>
           </View>
         </View>
       </View>
 
-    
+      {/* 3. GUEST INFORMATION */}
       <View style={styles.fieldsGroup}>
-        <Text style={styles.fieldSectionHeading}>Guest Information</Text>
+        <Text style={styles.fieldSectionHeading}>Primary Guest Details</Text>
 
         <View style={styles.inputWrapper}>
-          <Ionicons name="person-outline" size={18} color={COLORS.textMuted} style={styles.inputIcon} />
+          <Ionicons name="person-outline" size={18} color="#64748B" style={styles.inputIcon} />
           <TextInput
-            placeholder="Full Name"
-            placeholderTextColor={COLORS.textMuted}
+            placeholder="Full Name (as on ID proof)"
+            placeholderTextColor="#94A3B8"
             value={name}
             onChangeText={setName}
             style={styles.textInput}
@@ -147,10 +170,10 @@ export default function BookingForm({ selectedHotel }) {
         </View>
 
         <View style={styles.inputWrapper}>
-          <Ionicons name="mail-outline" size={18} color={COLORS.textMuted} style={styles.inputIcon} />
+          <Ionicons name="mail-outline" size={18} color="#64748B" style={styles.inputIcon} />
           <TextInput
-            placeholder="Email Address"
-            placeholderTextColor={COLORS.textMuted}
+            placeholder="Email Address for E-Voucher"
+            placeholderTextColor="#94A3B8"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -160,10 +183,10 @@ export default function BookingForm({ selectedHotel }) {
         </View>
 
         <View style={styles.inputWrapper}>
-          <Ionicons name="call-outline" size={18} color={COLORS.textMuted} style={styles.inputIcon} />
+          <Ionicons name="call-outline" size={18} color="#64748B" style={styles.inputIcon} />
           <TextInput
-            placeholder="Phone Number"
-            placeholderTextColor={COLORS.textMuted}
+            placeholder="Contact Number (+91)"
+            placeholderTextColor="#94A3B8"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
@@ -172,10 +195,10 @@ export default function BookingForm({ selectedHotel }) {
         </View>
       </View>
 
-    
+      {/* 4. STAY DATES */}
       <View style={styles.datesRow}>
         <View style={[styles.inputWrapper, { flex: 1, marginRight: 8 }]}>
-          <Ionicons name="calendar-outline" size={18} color={COLORS.textMuted} style={styles.inputIcon} />
+          <Ionicons name="calendar-outline" size={18} color="#EA580C" style={styles.inputIcon} />
           <View>
             <Text style={styles.miniLabel}>CHECK-IN</Text>
             <TextInput
@@ -187,7 +210,7 @@ export default function BookingForm({ selectedHotel }) {
         </View>
 
         <View style={[styles.inputWrapper, { flex: 1, marginLeft: 8 }]}>
-          <Ionicons name="calendar-outline" size={18} color={COLORS.textMuted} style={styles.inputIcon} />
+          <Ionicons name="calendar-outline" size={18} color="#EA580C" style={styles.inputIcon} />
           <View>
             <Text style={styles.miniLabel}>CHECK-OUT</Text>
             <TextInput
@@ -199,35 +222,44 @@ export default function BookingForm({ selectedHotel }) {
         </View>
       </View>
 
-    
+      {/* 5. CONFIRM & PROCEED TO PAYMENT BUTTON */}
       <Pressable
         style={({ pressed }) => [
           styles.submitButton,
-          pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
+          pressed && { opacity: 0.9, transform: [{ scale: 0.985 }] }
         ]}
-        onPress={handleBook}
+        onPress={handleProceedToPayment}
       >
         <Text style={styles.submitButtonText}>Confirm & Book Stay</Text>
-        <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginLeft: 6 }} />
+        <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
       </Pressable>
+
+      <View style={styles.securityRow}>
+        <Ionicons name="shield-checkmark" size={14} color="#16A34A" />
+        <Text style={styles.securityText}>Free cancellation up to 48h before check-in</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20
+    width: '100%',
+    alignSelf: 'stretch',
+    padding: 16
   },
   summaryCard: {
-    backgroundColor: COLORS.surface,
+    width: '100%',
+    alignSelf: 'stretch',
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 20,
+    padding: 18,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3
   },
@@ -239,22 +271,22 @@ const styles = StyleSheet.create({
   summaryHotelName: {
     fontSize: 17,
     fontWeight: '800',
-    color: COLORS.text,
+    color: '#0F172A',
     marginBottom: 4
   },
   summaryLocation: {
     fontSize: 13,
-    color: COLORS.textSecondary
+    color: '#64748B'
   },
   summaryRate: {
     fontSize: 20,
-    fontWeight: '800',
-    color: COLORS.primary
+    fontWeight: '900',
+    color: '#EA580C'
   },
   summaryPerNight: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: COLORS.textMuted
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '600'
   },
   divider: {
     height: 1,
@@ -268,200 +300,146 @@ const styles = StyleSheet.create({
   },
   calcLabel: {
     fontSize: 13,
-    color: COLORS.textSecondary
+    color: '#64748B'
   },
   calcValue: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.text
+    fontWeight: '700',
+    color: '#0F172A'
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 10,
-    marginTop: 6,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9'
+    alignItems: 'center'
   },
   totalLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
-    color: COLORS.text
+    color: '#0F172A'
+  },
+  totalSub: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2
   },
   totalValue: {
     fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.primary
+    fontWeight: '900',
+    color: '#EA580C'
   },
   countersRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 14,
     marginBottom: 20
   },
   counterBox: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     padding: 14,
-    borderRadius: 18,
-    marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: '#E2E8F0'
+    borderColor: '#E2E8F0',
+    alignItems: 'center'
   },
   counterLabel: {
     fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    marginBottom: 8,
-    letterSpacing: 0.5
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+    marginBottom: 10
   },
   counterControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    gap: 14
   },
   counterBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center'
   },
   counterNumber: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
-    color: COLORS.text
+    color: '#0F172A'
   },
   fieldsGroup: {
     marginBottom: 16
   },
   fieldSectionHeading: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
     marginBottom: 12
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0'
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    height: 52
   },
   inputIcon: {
-    marginRight: 10
+    marginRight: 12
   },
   textInput: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.text
+    color: '#0F172A',
+    fontWeight: '500'
   },
   datesRow: {
     flexDirection: 'row',
     marginBottom: 20
   },
   miniLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.textMuted,
-    marginBottom: 2
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.6
   },
   dateInput: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.text,
-    padding: 0
+    fontWeight: '700',
+    color: '#0F172A',
+    paddingVertical: 0
   },
   submitButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: '#EA580C', // Orangish
+    borderRadius: 16,
+    height: 54,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 30,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
+    shadowColor: '#EA580C',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
-    elevation: 5,
-    marginTop: 6
+    elevation: 4
   },
   submitButtonText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700'
+    fontWeight: '800',
+    letterSpacing: 0.2
   },
-  successCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 24,
-    padding: 28,
-    alignItems: 'center',
-    margin: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 6
-  },
-  successIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#10B981',
+  securityRow: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12
+    gap: 6,
+    marginTop: 14
   },
-  successTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: 8
-  },
-  successMessage: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 20
-  },
-  reservationDetailBox: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    padding: 16,
-    width: '100%',
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#E2E8F0'
-  },
-  reservationDetailText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
+  securityText: {
+    fontSize: 12,
+    color: '#64748B',
     fontWeight: '500'
-  },
-  doneButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    width: '100%',
-    alignItems: 'center'
-  },
-  doneButtonText: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: '700'
   }
 });
